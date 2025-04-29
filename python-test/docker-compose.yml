@@ -1,0 +1,8 @@
+services:
+  pysnark-test-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./pysnark-test:/home/pysnark-test/
+    container_name: pysnark-test-container
