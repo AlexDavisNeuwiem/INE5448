@@ -8,15 +8,13 @@ WORKDIR /root
 RUN apt-get update && \
     apt-get install -y \
     wget unzip curl vim \
-    build-essential cmake git python3 python3-full
+    build-essential cmake git python3 python3-full \
+    && mkdir /home/pysnark/
 
 # Instalando snarkjs
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
     && \. "$HOME/.nvm/nvm.sh" \
     && nvm install 22 \
-    && npm install -g snarkjs@latest \
-    && mkdir /home/pysnark-test/
+    && npm install -g snarkjs@latest
 
-WORKDIR /home/pysnark-test/
-
-CMD ["tail", "-f", "/dev/null"]
+WORKDIR /home/pysnark/

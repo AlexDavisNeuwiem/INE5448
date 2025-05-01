@@ -1,0 +1,51 @@
+services:
+
+  postgres-service:
+    container_name: postgres-container
+    image: postgres:latest
+    restart: always
+    env_file:
+      # Talvez procurar um outro método
+      - ./postgres/.env
+    volumes:
+      # Usando caminhos relativos por enquanto
+      - ./postgres/data/:/var/lib/postgresql/data/
+    networks:
+      - database-network
+
+  facenet-service:
+    container_name: facenet-container
+    build:
+      context: ./facenet/
+      dockerfile: Dockerfile
+    volumes:
+      # Usando caminhos relativos por enquanto
+      - ./facenet/code/:/home/facenet/
+    networks:
+      - biometrics-network
+    # Apenas para testes
+    command: tail -f /dev/null
+
+  pysnark-service:
+    container_name: pysnark-container
+    build:
+      context: ./pysnark/
+      dockerfile: Dockerfile
+    volumes:
+      # Usando caminhos relativos por enquanto
+      - ./pysnark/code/:/home/pysnark/
+    networks:
+      - biometrics-network
+      - database-network
+    # Apenas para testes
+    command: tail -f /dev/null
+    depends_on:
+      - postgres-service
+      - facenet-service
+
+networks:
+  biometrics-network:
+    driver: bridge
+  database-network:
+    # Futuramente usar "internal: true"
+    driver: bridge

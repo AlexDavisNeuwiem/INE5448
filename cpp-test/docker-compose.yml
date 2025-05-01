@@ -1,8 +1,0 @@
-services:
-  libsnark-test-service:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    volumes:
-      - ./libsnark-test:/home/libsnark-test/
-    container_name: libsnark-test-container
