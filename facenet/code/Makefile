@@ -6,16 +6,16 @@ REQ_FILE := requirements.txt
 TARGET := main.py
 INPUT ?=
 
-.PHONY: all run install-deps clean venv
+.PHONY: all run install clean venv
 
-all: install-deps run
+all: install run
 
 # Cria ambiente virtual
 venv:
 	$(PYTHON) -m venv $(VENV_DIR)
 
 # Instala dependências no ambiente virtual
-install-deps: venv
+install: venv
 	$(VENV_DIR)/bin/$(PIP) install -r $(REQ_FILE)
 
 # Executar o programa dentro do ambiente virtual

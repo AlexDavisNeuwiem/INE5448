@@ -1,1 +1,4 @@
 facenet-pytorch
+torch
+torchvision
+pillow
