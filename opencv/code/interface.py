@@ -1,17 +1,17 @@
 import os
-from face_recognizer import FaceRecognizer
+from fingerprint_recognizer import FingerprintRecognizer
 
 # Interface por terminal (entrada única)
 def run():
     print("\n=================================================")
-    print("  SISTEMA DE RECONHECIMENTO FACIAL - FACENET-PYTORCH")
+    print("  SISTEMA DE RECONHECIMENTO DE DIGITAL - OPENCV")
     print("=================================================\n")
     
     print("Inicializando sistema...")
     
     try:
-        # Criar reconhecedor facial
-        recognizer = FaceRecognizer()
+        # Criar reconhecedor de digital
+        recognizer = FingerprintRecognizer()
         
         def clear_screen():
             """Limpa a tela do terminal"""
@@ -20,10 +20,10 @@ def run():
         def print_menu():
             """Exibe o menu de opções"""
             clear_screen()
-            print("\n===== SISTEMA DE RECONHECIMENTO FACIAL =====")
+            print("\n===== SISTEMA DE RECONHECIMENTO DE DIGITAL =====")
             print("1. Adicionar pessoa")
-            print("2. Verificar se foto pertence a pessoa")
-            print("3. Reconhecer pessoa em foto")
+            print("2. Verificar se digital pertence a pessoa")
+            print("3. Reconhecer pessoa a qual a digital pertence")
             print("4. Listar pessoas cadastradas")
             print("5. Ajustar limiar de similaridade")
             print("0. Sair")
@@ -66,21 +66,21 @@ def run():
                         print(f"Falha ao adicionar pessoa '{nome}'")
                 
                 elif opcao == '2':
-                    # Verificar se foto pertence a pessoa
+                    # Verificar se digital pertence a pessoa
                     clear_screen()
-                    print("\n--- VERIFICAR FOTO ---\n")
+                    print("\n--- VERIFICAR DIGITAL ---\n")
                     
-                    if not recognizer.known_embeddings:
+                    if not recognizer.database:
                         print("Erro: Nenhuma pessoa cadastrada no sistema")
                         input("\nPressione ENTER para continuar...")
                         continue
                         
                     print("Pessoas cadastradas:")
-                    for i, pessoa in enumerate(recognizer.known_embeddings.keys(), 1):
+                    for i, pessoa in enumerate(recognizer.database.keys(), 1):
                         print(f"{i}. {pessoa}")
                     
                     nome = input("\nNome da pessoa a verificar: ")
-                    if nome not in recognizer.known_embeddings:
+                    if nome not in recognizer.database:
                         print(f"Erro: Pessoa '{nome}' não está cadastrada")
                         input("\nPressione ENTER para continuar...")
                         continue
@@ -106,7 +106,7 @@ def run():
                     clear_screen()
                     print("\n--- RECONHECER PESSOA ---\n")
                     
-                    if not recognizer.known_embeddings:
+                    if not recognizer.database:
                         print("Erro: Nenhuma pessoa cadastrada no sistema")
                         input("\nPressione ENTER para continuar...")
                         continue
@@ -117,7 +117,7 @@ def run():
                         input("\nPressione ENTER para continuar...")
                         continue
                     
-                    print(f"\nReconhecendo pessoa na imagem...")
+                    print(f"\nReconhecendo digital...")
                     pessoa_reconhecida, similaridade = recognizer.recognize(imagem)
                     
                     print("\nRESULTADO:")
@@ -132,12 +132,12 @@ def run():
                     clear_screen()
                     print("\n--- PESSOAS CADASTRADAS ---\n")
                     
-                    if not recognizer.known_embeddings:
+                    if not recognizer.database:
                         print("Nenhuma pessoa cadastrada no sistema")
                     else:
-                        print(f"Total de pessoas cadastradas: {len(recognizer.known_embeddings)}")
+                        print(f"Total de pessoas cadastradas: {len(recognizer.database)}")
                         print("-" * 30)
-                        for i, pessoa in enumerate(recognizer.known_embeddings.keys(), 1):
+                        for i, pessoa in enumerate(recognizer.database.keys(), 1):
                             print(f"{i}. {pessoa}")
                 
                 elif opcao == '5':
@@ -173,5 +173,5 @@ def run():
     except Exception as e:
         print(f"\nErro crítico: {e}")
     finally:
-        print("\nEncerrando sistema de reconhecimento facial...")
+        print("\nEncerrando sistema de reconhecimento de digital...")
         print("Até logo!\n")

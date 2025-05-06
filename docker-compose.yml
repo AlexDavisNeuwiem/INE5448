@@ -26,6 +26,19 @@ services:
     # Apenas para testes
     command: tail -f /dev/null
 
+  opencv-service:
+    container_name: opencv-container
+    build:
+      context: ./opencv/
+      dockerfile: Dockerfile
+    volumes:
+      # Usando caminhos relativos por enquanto
+      - ./opencv/code/:/home/opencv/
+    networks:
+      - biometrics-network
+    # Apenas para testes
+    command: tail -f /dev/null
+
   pysnark-service:
     container_name: pysnark-container
     build:

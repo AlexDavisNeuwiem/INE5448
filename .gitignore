@@ -137,6 +137,9 @@ venv.bak/
 
 # Por enquanto
 # .env
+.png
+.jpg
+.jpeg
 
 # Spyder project settings
 .spyderproject
