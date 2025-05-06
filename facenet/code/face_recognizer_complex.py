@@ -4,14 +4,14 @@ from PIL import Image
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 class FaceRecognizer:
-    def __init__(self, device='cpu'):
+    def __init__(self):
         """
         Inicializa o sistema de reconhecimento facial
         
         Args:
             device: dispositivo onde executar a inferência ('cpu' ou 'cuda')
         """
-        self.device = torch.device(device)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         print("Inicializando sistema de reconhecimento facial...")
         
