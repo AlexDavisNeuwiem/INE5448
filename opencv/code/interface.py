@@ -96,9 +96,9 @@ def run():
                     
                     print("\nRESULTADO:")
                     if pertence:
-                        print(f"✓ A imagem PERTENCE a {nome} (similaridade: {similaridade:.4f})")
+                        print(f"A imagem PERTENCE a {nome} (similaridade: {similaridade:.4f})")
                     else:
-                        print(f"✗ A imagem NÃO pertence a {nome} (similaridade: {similaridade:.4f})")
+                        print(f"A imagem NÃO pertence a {nome} (similaridade: {similaridade:.4f})")
                         print(f"Limiar atual: {recognizer.similarity_threshold}")
                 
                 elif opcao == '3':
