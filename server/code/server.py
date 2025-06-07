@@ -111,9 +111,27 @@ class Server:
                                     'data': embedding_criptografada
                                 }
                             )
+                        else:
+                            # Envia erro se não encontrar embedding
+                            return_address = message['return_to'].split(':')
+                            self.enviar_mensagem(
+                                return_address[0], 
+                                int(return_address[1]),
+                                {
+                                    'type': 'authentication_result',
+                                    'data': {
+                                        'authenticated': False,
+                                        'reason': 'Embedding não encontrada para o ID fornecido'
+                                    }
+                                }
+                            )
                     
                     elif message['type'] == 'verify_snark_proof':
-                        resultado = self.verificar_prova_snark(message['prova'], message['chave'], message['params'])
+                        resultado = self.verificar_prova_snark(
+                            message['data']['prova'], 
+                            message['data']['chave'], 
+                            message['data']['params']
+                        )
                         
                         # Envia resultado de volta para o usuário
                         return_address = message['return_to'].split(':')
@@ -191,18 +209,26 @@ class Server:
     def verificar_prova_snark(self, prova, chave, params):
         """Verifica prova zk-SNARK recebida"""
         try:
+            print(f"🔵 Verificando prova zk-SNARK...")
+            
+            # Verifica se os dados da prova são válidos
+            if not all([prova, chave, params]):
+                print("🔵 ❌ Dados da prova SNARK inválidos ou incompletos")
+                return {
+                    'authenticated': False,
+                    'reason': 'Dados da prova SNARK inválidos'
+                }
 
+            # Converte os dados de bytes para arquivos JSON
             self.converte_bytes_para_arquivo_json(SnarkPath.PROOF.value, prova)
             self.converte_bytes_para_arquivo_json(SnarkPath.VERIFICATION_KEY.value, chave)
             self.converte_bytes_para_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value, params)
 
-            # Executar o script .sh, passando o caminho do arquivo como argumento
-            resultado = subprocess.run(['bash', 'pysnark/snark.sh'], capture_output=True, text=True)
+            # Executar o script de verificação SNARK
+            resultado = subprocess.run(['bash', 'pysnark/verify.sh'], capture_output=True, text=True)
             
-            print(f"🔵 Verificando prova zk-SNARK para usuário")
-            
-            # Verifica se a prova é válida
-            if resultado.stdout != '[INFO]  snarkJS: OK!':
+            # Verifica se a prova é válida baseado na saída do script
+            if resultado.returncode == 0 and 'OK!' in resultado.stdout:
                 print("🔵 ✅ Prova zk-SNARK válida - Autenticação aprovada")
                 return {
                     'authenticated': True,
@@ -210,8 +236,11 @@ class Server:
                 }
             else:
                 print("🔵 ❌ Prova zk-SNARK inválida - Autenticação rejeitada")
+                print(f"🔵 Saída do script: {resultado.stdout}")
+                print(f"🔵 Erro do script: {resultado.stderr}")
                 return {
                     'authenticated': False,
+                    'reason': 'Prova inválida'
                 }
                 
         except Exception as e:

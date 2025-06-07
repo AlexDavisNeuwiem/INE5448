@@ -25,13 +25,13 @@ services:
       - postgres-service
     command: make
 
-  modelo-service:
-    container_name: modelo-container
+  model-service:
+    container_name: model-container
     build:
-      context: ./modelo/
+      context: ./model/
       dockerfile: Dockerfile
     volumes:
-      - ./modelo/code/:/home/modelo/
+      - ./model/code/:/home/model/
     networks:
       - model-network
     command: make
@@ -47,7 +47,7 @@ services:
       - model-network
       - server-network
     depends_on:
-      - modelo-service
+      - model-service
       - server-service
     command: make
 

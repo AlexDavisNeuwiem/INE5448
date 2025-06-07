@@ -1,6 +1,6 @@
-from model import ModeloService
+from model import Model
 
 
 if __name__ == "__main__":
-    modelo_service = ModeloService()
-    modelo_service.run()
+    model = Model()
+    model.run()

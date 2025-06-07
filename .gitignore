@@ -6,9 +6,9 @@ venv/
 # .env
 
 # Images
-.png
-.jpg
-.jpeg
+*.png
+*.jpg
+*.jpeg
 
 # VC Code
 vscode/

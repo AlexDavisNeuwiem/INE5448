@@ -1,6 +1,6 @@
 import sys
 import json
-import torch
+from torch.nn.functional import cosine_similarity
 from pysnark.runtime import snark, PrivVal
 
 
@@ -17,10 +17,7 @@ def run(entrada):
 @snark
 def calcular_similaridade_cosseno(embedding1, embedding2, threshold):
         """Calcula similaridade de cosseno entre embeddings"""
-        similarity = torch.nn.functional.cosine_similarity(
-            embedding1.unsqueeze(0), 
-            embedding2.unsqueeze(0)
-        ).item()
+        similarity = cosine_similarity(embedding1.unsqueeze(0), embedding2.unsqueeze(0)).item()
 
         return similarity > threshold
 

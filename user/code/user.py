@@ -9,21 +9,21 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 
 from PIL import Image
-from enums import ImagePath, Address
+from enums import Addresses, ImagePath
 
 
-class UserService:
+class User:
     def __init__(self):
         self.symmetric_key = None
 
-        self.host = Address.HOST.value
-        self.port = Address.PORT.value
+        self.host = Addresses.HOST.value
+        self.port = Addresses.PORT.value
 
-        self.server_host = Address.SERVER_HOST.value
-        self.server_port = Address.SERVER_PORT.value
+        self.server_host = Addresses.SERVER_HOST.value
+        self.server_port = Addresses.SERVER_PORT.value
 
-        self.modelo_host = Address.MODEL_HOST.value
-        self.modelo_port = Address.MODEL_PORT.value
+        self.model_host = Addresses.MODEL_HOST.value
+        self.model_port = Addresses.MODEL_PORT.value
         
     def run(self):
         """Inicia o serviço do usuário"""
@@ -159,19 +159,22 @@ class UserService:
         
         # 3. Solicita embedding ao modelo de IA
         print("🟢 Enviando foto para o modelo de IA...")
-        mensagem_modelo = {
+        mensagem_model = {
             'type': 'generate_embedding',
             'data': foto_usuario,
             'return_to': 'user-container:8001'
         }
         
-        self.enviar_mensagem(self.modelo_host, self.modelo_port, mensagem_modelo)
+        self.enviar_mensagem(self.model_host, self.model_port, mensagem_model)
     
     def _processar_embedding(self, embedding):
         """Processa embedding recebida do modelo de IA"""
         print("🟢 Embedding recebida do modelo de IA")
         
-        # TODO: Tratar quando embedding == None
+        # Verifica se embedding é válida
+        if embedding is None:
+            print("🟢 ❌ Erro: Não foi possível extrair embedding da foto")
+            return
 
         # 4. Criptografa embedding
         embedding_criptografada = self.criptografar_embedding(embedding)
@@ -228,7 +231,7 @@ class UserService:
         
         # Solicita prova zk-SNARK ao modelo
         print("🟢 Solicitando prova zk-SNARK ao modelo...")
-        mensagem_modelo = {
+        mensagem_model = {
             'type': 'generate_snark_proof',
             'data': {
                 'nova_foto': nova_foto,
@@ -237,9 +240,9 @@ class UserService:
             'return_to': 'user-container:8001'
         }
         
-        self.enviar_mensagem(self.modelo_host, self.modelo_port, mensagem_modelo)
+        self.enviar_mensagem(self.model_host, self.model_port, mensagem_model)
     
-    def _processar_prova_snark(self, prova_snark):
+    def _processar_prova_snark(self, dados_prova):
         """Processa prova zk-SNARK recebida do modelo"""
         print("🟢 Prova zk-SNARK recebida do modelo")
         
@@ -249,7 +252,9 @@ class UserService:
             'type': 'verify_snark_proof',
             'data': {
                 'user_id': self.user_id,
-                'proof': prova_snark
+                'prova': dados_prova['prova'],
+                'chave': dados_prova['chave'],
+                'params': dados_prova['params']
             },
             'return_to': 'user-container:8001'
         }
@@ -260,7 +265,7 @@ class UserService:
         """Processa resultado da autenticação"""
         if resultado['authenticated']:
             print(f"🟢 ✅ AUTENTICAÇÃO BEM-SUCEDIDA!")
-            print(f"🟢 Similaridade: {resultado.get('similarity', 'N/A')}")
+            print(f"🟢 Timestamp: {resultado.get('timestamp', 'N/A')}")
         else:
             print(f"🟢 ❌ AUTENTICAÇÃO FALHOU!")
             print(f"🟢 Motivo: {resultado.get('reason', 'Desconhecido')}")

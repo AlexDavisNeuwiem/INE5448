@@ -1,5 +1,5 @@
-from user import UserService
+from user import User
 
 if __name__ == "__main__":
-    user_service = UserService()
-    user_service.run()
+    user = User()
+    user.run()

@@ -7,7 +7,7 @@ class Addresses(Enum):
     SERVER_HOST = 'server-container'
     SERVER_PORT = 8000
 
-    MODEL_HOST = 'modelo-container'
+    MODEL_HOST = 'model-container'
     MODEL_PORT = 8002
 
 class ImagePath(Enum):

@@ -1,6 +1,6 @@
 from enum import Enum
 
-class Addresses(Enum):
+class Address(Enum):
     HOST = '0.0.0.0'
     PORT = 8000
 

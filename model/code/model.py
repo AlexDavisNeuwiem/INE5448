@@ -6,21 +6,21 @@ import threading
 import subprocess
 
 import torch
-from enums import SnarkPath, Address
+from enums import Address, SnarkPath
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 
-class ModeloService:
+class Model:
     def __init__(self):
         self.host = Address.HOST.value
         self.port = Address.PORT.value
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
-        print("Inicializando sistema de reconhecimento facial...")
+        print("🔴 Inicializando sistema de reconhecimento facial...")
         
         # Detector de faces
-        print("Carregando detector de faces MTCNN...")
+        print("🔴 Carregando detector de faces MTCNN...")
         self.mtcnn = MTCNN(
             image_size=160, 
             margin=20, 
@@ -32,9 +32,10 @@ class ModeloService:
         )
         
         # Modelo para embeddings faciais (pré-treinado no VGGFace2)
-        print("Carregando modelo de extração de características faciais...")
+        print("🔴 Carregando modelo de extração de características faciais...")
         self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
-        
+        print("🔴 Modelo Carregado!")
+
         # Limiar de similaridade de cosseno para considerar uma correspondência
         self.similarity_threshold = 0.7
 
@@ -85,18 +86,34 @@ class ModeloService:
                     elif message['type'] == 'generate_snark_proof':
                         dados_verificacao = self.gerar_prova_snark(message['data'])
                         
-                        # Envia prova de volta para o usuário
-                        return_address = message['return_to'].split(':')
-                        self.enviar_mensagem(
-                            return_address[0], 
-                            int(return_address[1]),
-                            {
-                                'type': 'snark_proof',
-                                'prova': dados_verificacao[0],
-                                'chave': dados_verificacao[1],
-                                'params': dados_verificacao[2]
-                            }
-                        )
+                        if dados_verificacao is not None:
+                            # Envia prova de volta para o usuário
+                            return_address = message['return_to'].split(':')
+                            self.enviar_mensagem(
+                                return_address[0], 
+                                int(return_address[1]),
+                                {
+                                    'type': 'snark_proof',
+                                    'data': {
+                                        'prova': dados_verificacao[0],
+                                        'chave': dados_verificacao[1],
+                                        'params': dados_verificacao[2]
+                                    }
+                                }
+                            )
+                        else:
+                            # Envia erro de volta para o usuário
+                            return_address = message['return_to'].split(':')
+                            self.enviar_mensagem(
+                                return_address[0], 
+                                int(return_address[1]),
+                                {
+                                    'type': 'snark_proof_error',
+                                    'data': {
+                                        'error': 'Falha ao gerar prova zk-SNARK'
+                                    }
+                                }
+                            )
                         
         except Exception as e:
             print(f"🔴 Erro ao processar mensagem: {e}")
@@ -105,19 +122,27 @@ class ModeloService:
         """Gera embedding biométrica a partir da foto"""
         print("🔴 Gerando embedding da foto...")
 
-        # Detecta face
-        face = self.mtcnn(foto)
-        
-        if face is None:
-            return None
+        try:
+            # Detecta face
+            face = self.mtcnn(foto)
+            
+            if face is None:
+                print("🔴 ❌ Nenhuma face detectada na imagem")
+                return None
 
-        # Gera embedding facial (normalizado)
-        with torch.no_grad():
-            embedding = self.resnet(face.unsqueeze(0).to(self.device))
-        
-        
-        print(f"🔴 Embedding gerada!")
-        return embedding.squeeze()
+            # Gera embedding facial (normalizado)
+            with torch.no_grad():
+                embedding = self.resnet(face.unsqueeze(0).to(self.device))
+            
+            # Converte tensor para lista para serialização JSON
+            embedding_list = embedding.squeeze().cpu().numpy().tolist()
+            
+            print(f"🔴 Embedding gerada com sucesso!")
+            return embedding_list
+            
+        except Exception as e:
+            print(f"🔴 Erro ao gerar embedding: {e}")
+            return None
 
     
     def gerar_prova_snark(self, dados):
@@ -131,8 +156,10 @@ class ModeloService:
             # 5. Gera nova embedding da foto atual
             embedding_nova = self.gerar_embedding(nova_foto)
             
-            # Calcula similaridade cosseno
-
+            if embedding_nova is None:
+                print("🔴 ❌ Não foi possível extrair embedding da nova foto")
+                return None
+            
             # Salvar os dados temporariamente em JSON
             with tempfile.NamedTemporaryFile(delete=False, mode='w', prefix='witness_', suffix='.json', dir='pysnark/') as temp:
                 json.dump({
@@ -143,7 +170,12 @@ class ModeloService:
                 caminho_temp = temp.name
 
             # Executar o script .sh, passando o caminho do arquivo como argumento
-            subprocess.run(['bash', 'pysnark/snark.sh', caminho_temp])
+            resultado = subprocess.run(['bash', 'pysnark/snark.sh', caminho_temp], 
+                                     capture_output=True, text=True)
+            
+            if resultado.returncode != 0:
+                print(f"🔴 ❌ Erro ao executar script SNARK: {resultado.stderr}")
+                return None
 
             # Limpeza opcional do arquivo temporário
             os.remove(caminho_temp)
@@ -152,7 +184,7 @@ class ModeloService:
             chave = self.converte_arquivo_para_bytes(SnarkPath.VERIFICATION_KEY.value)
             params = self.converte_arquivo_para_bytes(SnarkPath.PUBLIC_PARAMETERS.value)
 
-            print(f"🔴 Prova zk-SNARK gerada")
+            print(f"🔴 Prova zk-SNARK gerada com sucesso")
 
             return (prova, chave, params)
 
@@ -175,9 +207,14 @@ class ModeloService:
             return False
 
     def converte_arquivo_para_bytes(self, caminho):
-        # 1. Abre e carrega o conteúdo do arquivo .json
-        with open(caminho, 'r') as arquivo_json:
-            conteudo = json.load(arquivo_json)
+        """Converte arquivo JSON para bytes"""
+        try:
+            # 1. Abre e carrega o conteúdo do arquivo .json
+            with open(caminho, 'r') as arquivo_json:
+                conteudo = json.load(arquivo_json)
 
-        # 2. Converte o conteúdo para string JSON e depois para bytes
-        return json.dumps(conteudo).encode()
+            # 2. Converte o conteúdo para string JSON e depois para bytes
+            return json.dumps(conteudo).encode()
+        except Exception as e:
+            print(f"🔴 Erro ao converter arquivo {caminho} para bytes: {e}")
+            return None
