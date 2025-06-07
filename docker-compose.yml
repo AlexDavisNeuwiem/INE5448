@@ -20,7 +20,7 @@ services:
       - ./server/code/:/home/server/
     networks:
       - database-network
-      - server-network
+      - unsecured-network
     depends_on:
       - postgres-service
     command: make
@@ -33,7 +33,7 @@ services:
     volumes:
       - ./model/code/:/home/model/
     networks:
-      - model-network
+      - secured-network
     command: make
 
   user-service:
@@ -44,8 +44,8 @@ services:
     volumes:
       - ./user/code/:/home/user/
     networks:
-      - model-network
-      - server-network
+      - secured-network
+      - unsecured-network
     depends_on:
       - model-service
       - server-service
@@ -54,7 +54,7 @@ services:
 networks:
   database-network:
     driver: bridge
-  model-network:
+  secured-network:
     driver: bridge
-  server-network:
+  unsecured-network:
     driver: bridge
