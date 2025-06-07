@@ -9,7 +9,7 @@ RUN apt-get update && \
     apt-get install -y \
     wget unzip curl vim \
     build-essential cmake git python3 python3-full \
-    && mkdir /home/pysnark/
+    && mkdir /home/server/
 
 # Instalando snarkjs
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
@@ -17,4 +17,4 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
     && nvm install 22 \
     && npm install -g snarkjs@latest
 
-WORKDIR /home/pysnark/
+WORKDIR /home/server/

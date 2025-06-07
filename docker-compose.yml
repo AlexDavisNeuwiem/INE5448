@@ -5,60 +5,56 @@ services:
     image: postgres:latest
     restart: always
     env_file:
-      # Talvez procurar um outro método
       - ./postgres/.env
     volumes:
-      # Usando caminhos relativos por enquanto
       - ./postgres/data/:/var/lib/postgresql/data/
     networks:
       - database-network
 
-  facenet-service:
-    container_name: facenet-container
+  server-service:
+    container_name: server-container
     build:
-      context: ./facenet/
+      context: ./server/
       dockerfile: Dockerfile
     volumes:
-      # Usando caminhos relativos por enquanto
-      - ./facenet/code/:/home/facenet/
+      - ./server/code/:/home/server/
     networks:
-      - biometrics-network
-    # Apenas para testes
-    command: tail -f /dev/null
-
-  opencv-service:
-    container_name: opencv-container
-    build:
-      context: ./opencv/
-      dockerfile: Dockerfile
-    volumes:
-      # Usando caminhos relativos por enquanto
-      - ./opencv/code/:/home/opencv/
-    networks:
-      - biometrics-network
-    # Apenas para testes
-    command: tail -f /dev/null
-
-  pysnark-service:
-    container_name: pysnark-container
-    build:
-      context: ./pysnark/
-      dockerfile: Dockerfile
-    volumes:
-      # Usando caminhos relativos por enquanto
-      - ./pysnark/code/:/home/pysnark/
-    networks:
-      - biometrics-network
       - database-network
-    # Apenas para testes
-    command: tail -f /dev/null
+      - server-network
     depends_on:
       - postgres-service
-      - facenet-service
+    command: make
+
+  modelo-service:
+    container_name: modelo-container
+    build:
+      context: ./modelo/
+      dockerfile: Dockerfile
+    volumes:
+      - ./modelo/code/:/home/modelo/
+    networks:
+      - model-network
+    command: make
+
+  user-service:
+    container_name: user-container
+    build:
+      context: ./user/
+      dockerfile: Dockerfile
+    volumes:
+      - ./user/code/:/home/user/
+    networks:
+      - model-network
+      - server-network
+    depends_on:
+      - modelo-service
+      - server-service
+    command: make
 
 networks:
-  biometrics-network:
-    driver: bridge
   database-network:
-    # Futuramente usar "internal: true"
+    driver: bridge
+  model-network:
+    driver: bridge
+  server-network:
     driver: bridge

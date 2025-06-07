@@ -9,6 +9,6 @@ RUN apt-get update && \
     apt-get install -y \
     wget unzip curl vim \
     build-essential cmake git python3 python3-full \
-    && mkdir /home/opencv/
+    && mkdir /home/user/
 
-WORKDIR /home/opencv/
+WORKDIR /home/user/

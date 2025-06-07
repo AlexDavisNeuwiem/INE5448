@@ -18,11 +18,11 @@ venv:
 install: venv
 	$(VENV_DIR)/bin/$(PIP) install -r $(REQ_FILE)
 
-# Executar o programa dentro do ambiente virtual
+# Executa o programa dentro do ambiente virtual
 run:
 	$(VENV_DIR)/bin/$(PYTHON) $(SRC_DIR)/$(TARGET) $(if $(INPUT),$(INPUT),)
 
-# Limpar ambiente virtual e arquivos temporários
+# Limpa ambiente virtual e arquivos temporários
 clean:
 	rm -rf $(VENV_DIR)
 	find . -type d -name "__pycache__" -exec rm -rf {} +
