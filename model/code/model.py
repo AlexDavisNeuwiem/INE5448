@@ -1,7 +1,5 @@
-import os
 import json
 import socket
-import tempfile
 import threading
 import subprocess
 
@@ -63,6 +61,9 @@ class Model:
                     thread.start()
                 except Exception as e:
                     print(f"🔴 Erro no servidor: {e}")
+                except KeyboardInterrupt:
+                    print("\n🔴 Encerrando modelo de IA...")
+                    break
     
     def _handle_client(self, conn, addr):
         """Processa mensagens recebidas"""
@@ -159,47 +160,39 @@ class Model:
             return None
 
     
-    def gerar_prova_snark(self, dados):
+    def gerar_prova_snark(self, mensagem):
         """Gera prova zk-SNARK para similaridade de embeddings"""
         print("🔴 Gerando prova zk-SNARK...")
         
         try:
-            foto_base64 = dados['foto_nova']
-            embedding_antiga = dados['embedding_antiga']
-
-            dados = base64.b64decode(foto_base64)
-            foto_nova = Image.open(BytesIO(dados))
+            foto_base64 = mensagem['foto_nova']
+            embedding_antiga = mensagem['embedding_antiga']
             
             # 5. Gera nova embedding da foto atual
-            embedding_nova = self.gerar_embedding(foto_nova)
+            embedding_nova = self.gerar_embedding(foto_base64)
             
             if embedding_nova is None:
                 print("🔴 ❌ Não foi possível extrair embedding da nova foto")
                 return None
-            
+
             # Salvar os dados temporariamente em JSON
-            with tempfile.NamedTemporaryFile(delete=False, mode='w', prefix='witness_', suffix='.json', dir='pysnark/') as temp:
+            with open(SnarkPath.WITNESS.value, 'w') as arquivo:
                 json.dump({
                     'embedding1': embedding_antiga,
                     'embedding2': embedding_nova,
                     'threshold': self.similarity_threshold
-                }, temp)
-                caminho_temp = temp.name
+                }, arquivo)
 
             # Executar o script .sh, passando o caminho do arquivo como argumento
-            resultado = subprocess.run(['bash', 'pysnark/snark.sh', caminho_temp], 
-                                     capture_output=True, text=True)
+            resultado = subprocess.run(f'/bin/bash /home/model/pysnark/snark.sh', capture_output=True, text=True, shell=True)
             
             if resultado.returncode != 0:
                 print(f"🔴 ❌ Erro ao executar script SNARK: {resultado.stderr}")
                 return None
 
-            # Limpeza opcional do arquivo temporário
-            os.remove(caminho_temp)
-
-            prova = self.converte_arquivo_para_bytes(SnarkPath.PROOF.value)
-            chave = self.converte_arquivo_para_bytes(SnarkPath.VERIFICATION_KEY.value)
-            params = self.converte_arquivo_para_bytes(SnarkPath.PUBLIC_PARAMETERS.value)
+            prova = self.le_arquivo(SnarkPath.PROOF.value)
+            chave = self.le_arquivo(SnarkPath.VERIFICATION_KEY.value)
+            params = self.le_arquivo(SnarkPath.PUBLIC_PARAMETERS.value)
 
             print(f"🔴 Prova zk-SNARK gerada com sucesso")
 
@@ -223,15 +216,14 @@ class Model:
             print(f"🔴 Erro ao enviar mensagem: {e}")
             return False
 
-    def converte_arquivo_para_bytes(self, caminho):
+    def le_arquivo(self, caminho):
         """Converte arquivo JSON para bytes"""
         try:
             # 1. Abre e carrega o conteúdo do arquivo .json
             with open(caminho, 'r') as arquivo_json:
                 conteudo = json.load(arquivo_json)
 
-            # 2. Converte o conteúdo para string JSON e depois para bytes
-            return json.dumps(conteudo).encode()
+            return conteudo
         except Exception as e:
             print(f"🔴 Erro ao converter arquivo {caminho} para bytes: {e}")
             return None

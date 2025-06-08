@@ -82,15 +82,7 @@ TODO
 ## Para acompanhar logs específicos
 
 ```
-docker-compose logs -f user-service
-```
-
-```
-docker-compose logs -f server-service
-```
-
-```
-docker-compose logs -f model-service
+docker-compose logs -f [NOME DO SERVIÇO]
 ```
 
 ## Tecnologias

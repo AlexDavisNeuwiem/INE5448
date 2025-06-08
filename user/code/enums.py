@@ -13,7 +13,7 @@ class Addresses(Enum):
     MODEL_PORT = 8002
 
 class ImagePath(Enum):
-    FACE_IMAGE_REG = './faces/1.jpeg'
-    FACE_IMAGE_AUT = './faces/2.jpeg'
-    FINGERPRINT_REG = './fingerprints/1.jpg'
-    FINGERPRINT_AUT = './fingerprints/2.jpg'
+    FACE_IMAGE_REG = '/home/user/faces/1.jpeg'
+    FACE_IMAGE_AUT = '/home/user/faces/2.jpeg'
+    FINGERPRINT_REG = '/home/user/fingerprints/1.jpg'
+    FINGERPRINT_AUT = '/home/user/fingerprints/2.jpg'

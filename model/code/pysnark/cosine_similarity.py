@@ -1,15 +1,18 @@
 import sys
 import json
-from torch.nn.functional import cosine_similarity
+import torch
 from pysnark.runtime import snark, PrivVal
 
 
-def run(entrada):
-    with open(entrada, 'r') as arquivo:
+def run():
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    with open('/home/model/pysnark/witness.json', 'r') as arquivo:
         witness = json.load(arquivo)
 
-    embedding1 = witness['embedding1']
-    embedding2 = witness['embedding2']
+    embedding1 = torch.tensor(witness['embedding1']).unsqueeze(0).to(device)
+    embedding2 = torch.tensor(witness['embedding2']).unsqueeze(0).to(device)
     threshold = witness['threshold']
 
     calcular_similaridade_cosseno(embedding1, embedding2, threshold)
@@ -17,9 +20,9 @@ def run(entrada):
 @snark
 def calcular_similaridade_cosseno(embedding1, embedding2, threshold):
         """Calcula similaridade de cosseno entre embeddings"""
-        similarity = cosine_similarity(embedding1.unsqueeze(0), embedding2.unsqueeze(0)).item()
+        similarity = torch.nn.functional.cosine_similarity(embedding1, embedding2).item()
 
         return similarity > threshold
 
 if __name__ == "__main__":
-    run(sys.argv[1])
+    run()

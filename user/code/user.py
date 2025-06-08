@@ -43,7 +43,7 @@ class User:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\n🟢 Encerrando serviço do usuário...")
+            print("\n🟢 Encerrando usuário...")
     
     def _start_server(self):
         """Inicia servidor para receber mensagens de outros serviços"""

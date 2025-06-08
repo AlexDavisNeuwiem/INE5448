@@ -10,11 +10,16 @@ venv/
 *.jpg
 *.jpeg
 
+# JSON
+*proof.json
+*verification_key.json
+*public_parameters.json
+
 # VC Code
 vscode/
 
 # Witness
-.wtns
+*.wtns
 
 # Circuits
-.r1cs
+*.r1cs

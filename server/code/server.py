@@ -73,6 +73,9 @@ class Server:
                     thread.start()
                 except Exception as e:
                     print(f"🔵 Erro no servidor: {e}")
+                except KeyboardInterrupt:
+                    print("\n🔵 Encerrando servidor...")
+                    break
     
     def _handle_client(self, conn, addr):
         """Processa mensagens recebidas"""
@@ -226,12 +229,12 @@ class Server:
                 }
 
             # Converte os dados de bytes para arquivos JSON
-            self.converte_bytes_para_arquivo_json(SnarkPath.PROOF.value, prova)
-            self.converte_bytes_para_arquivo_json(SnarkPath.VERIFICATION_KEY.value, chave)
-            self.converte_bytes_para_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value, params)
+            self.escreve_arquivo(SnarkPath.PROOF.value, prova)
+            self.escreve_arquivo(SnarkPath.VERIFICATION_KEY.value, chave)
+            self.escreve_arquivo(SnarkPath.PUBLIC_PARAMETERS.value, params)
 
             # Executar o script de verificação SNARK
-            resultado = subprocess.run(['bash', 'pysnark/verify.sh'], capture_output=True, text=True)
+            resultado = subprocess.run(['/bin/bash', '/home/server/pysnark/verify.sh'], capture_output=True, text=True)
             
             # Verifica se a prova é válida baseado na saída do script
             if resultado.returncode == 0 and 'OK!' in resultado.stdout:
@@ -268,10 +271,7 @@ class Server:
             print(f"🔵 Erro ao enviar mensagem: {e}")
             return False
 
-    def converte_bytes_para_arquivo_json(self, nome, conteudo):
-        # 2. Decodifica os bytes para uma string JSON e converte a string JSON de volta para um objeto Python
-        dados = json.loads(conteudo.decode())
-
-        # 3. Escreve o conteúdo no arquivo JSON
+    def escreve_arquivo(self, nome, conteudo):
+        # Escreve o conteúdo no arquivo JSON
         with open(nome, 'w') as arquivo:
-            json.dump(dados, arquivo)
+            json.dump(conteudo, arquivo)

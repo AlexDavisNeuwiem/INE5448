@@ -5,8 +5,11 @@ class Address(Enum):
     PORT = 8002
 
 class SnarkPath(Enum):
-    VERIFICATION_KEY = 'pysnark/verification_key.json'
 
-    PROOF = 'pysnark/proof.json'
+    WITNESS =  '/home/model/pysnark/witness.json'
 
-    PUBLIC_PARAMETERS= 'pysnark/public_parameters.json'
+    VERIFICATION_KEY = '/home/model/pysnark/verification_key.json'
+
+    PROOF = '/home/model/pysnark/proof.json'
+
+    PUBLIC_PARAMETERS= '/home/model/pysnark/public_parameters.json'
