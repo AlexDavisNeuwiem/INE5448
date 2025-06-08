@@ -3,6 +3,7 @@ import json
 import base64
 import socket
 import threading
+from io import BytesIO
 
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
@@ -64,7 +65,13 @@ class User:
         """Processa mensagens recebidas"""
         try:
             with conn:
-                data = conn.recv(4096)
+                data = b''
+                while True:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                print(f"🟢 Tamanho da mensagem recebida:", len(data))
                 if data:
                     message = json.loads(data.decode())
                     print(f"🟢 Mensagem recebida: {message}")
@@ -138,7 +145,7 @@ class User:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, port))
                 s.send(json.dumps(message).encode())
-                print(f"🟢 Mensagem enviada para {host}:{port}")
+                print(f"🟢 Mensagem de tamanho {len(json.dumps(message).encode())} enviada para {host}:{port}")
                 return True
         except Exception as e:
             print(f"🟢 Erro ao enviar mensagem: {e}")
@@ -155,14 +162,19 @@ class User:
         self.gerar_chaves_simetricas()
         
         # 2. Carrega foto do usuário
-        foto_usuario = Image.open(ImagePath.FACE_IMAGE_REG.value).convert('RGB')
+        foto_usuario = Image.open(ImagePath.FACE_IMAGE_REG.value)
+        
+        # Converte para base64
+        buffered = BytesIO()
+        foto_usuario.save(buffered, format='JPEG')
+        foto_base64 = base64.b64encode(buffered.getvalue()).decode()
         
         # 3. Solicita embedding ao modelo de IA
         print("🟢 Enviando foto para o modelo de IA...")
         mensagem_model = {
             'type': 'generate_embedding',
-            'data': foto_usuario,
-            'return_to': 'user-container:8001'
+            'data': foto_base64,
+            'return_to': Addresses.RETURN.value
         }
         
         self.enviar_mensagem(self.model_host, self.model_port, mensagem_model)
@@ -184,7 +196,7 @@ class User:
         mensagem_servidor = {
             'type': 'store_embedding',
             'data': embedding_criptografada,
-            'return_to': 'user-container:8001'
+            'return_to': Addresses.RETURN.value
         }
         
         self.enviar_mensagem(self.server_host, self.server_port, mensagem_servidor)
@@ -213,7 +225,7 @@ class User:
         mensagem_servidor = {
             'type': 'get_embedding',
             'data': self.user_id,
-            'return_to': 'user-container:8001'
+            'return_to': Addresses.RETURN.value
         }
         
         self.enviar_mensagem(self.server_host, self.server_port, mensagem_servidor)
@@ -224,20 +236,24 @@ class User:
         
         # 3. Descriptografa embedding
         embedding_antiga = self.descriptografar_embedding(embedding_criptografada)
-        print("🟢 Embedding descriptografada com sucesso")
         
         # 4. Carrega nova foto para autenticação
-        nova_foto = Image.open(ImagePath.FACE_IMAGE_AUT.value).convert('RGB')
+        foto_nova = Image.open(ImagePath.FACE_IMAGE_AUT.value)
         
+        # Converte para base64
+        buffered = BytesIO()
+        foto_nova.save(buffered, format='JPEG')
+        foto_base64 = base64.b64encode(buffered.getvalue()).decode()
+
         # Solicita prova zk-SNARK ao modelo
         print("🟢 Solicitando prova zk-SNARK ao modelo...")
         mensagem_model = {
             'type': 'generate_snark_proof',
             'data': {
-                'nova_foto': nova_foto,
+                'foto_nova': foto_base64,
                 'embedding_antiga': embedding_antiga,
             },
-            'return_to': 'user-container:8001'
+            'return_to': Addresses.RETURN.value
         }
         
         self.enviar_mensagem(self.model_host, self.model_port, mensagem_model)
@@ -256,7 +272,7 @@ class User:
                 'chave': dados_prova['chave'],
                 'params': dados_prova['params']
             },
-            'return_to': 'user-container:8001'
+            'return_to': Addresses.RETURN.value
         }
         
         self.enviar_mensagem(self.server_host, self.server_port, mensagem_servidor)

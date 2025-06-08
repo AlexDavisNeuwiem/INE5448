@@ -23,7 +23,7 @@ services:
       - unsecured-network
     depends_on:
       - postgres-service
-    command: make
+    command: tail -f /dev/null
 
   model-service:
     container_name: model-container
@@ -34,7 +34,7 @@ services:
       - ./model/code/:/home/model/
     networks:
       - secured-network
-    command: make
+    command: tail -f /dev/null
 
   user-service:
     container_name: user-container
@@ -49,7 +49,7 @@ services:
     depends_on:
       - model-service
       - server-service
-    command: make
+    command: tail -f /dev/null
 
 networks:
   database-network:

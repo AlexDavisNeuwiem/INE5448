@@ -5,6 +5,10 @@ import tempfile
 import threading
 import subprocess
 
+import base64
+from PIL import Image
+from io import BytesIO
+
 import torch
 from enums import Address, SnarkPath
 from facenet_pytorch import MTCNN, InceptionResnetV1
@@ -64,7 +68,13 @@ class Model:
         """Processa mensagens recebidas"""
         try:
             with conn:
-                data = conn.recv(4096)
+                data = b''
+                while True:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                print(f"🔴 Tamanho da mensagem recebida:", len(data))
                 if data:
                     message = json.loads(data.decode())
                     print(f"🔴 Mensagem recebida: {message['type']}")
@@ -118,13 +128,17 @@ class Model:
         except Exception as e:
             print(f"🔴 Erro ao processar mensagem: {e}")
     
-    def gerar_embedding(self, foto):
+    def gerar_embedding(self, foto_base64):
         """Gera embedding biométrica a partir da foto"""
         print("🔴 Gerando embedding da foto...")
 
         try:
+
+            dados = base64.b64decode(foto_base64)
+            foto_usuario = Image.open(BytesIO(dados))
+
             # Detecta face
-            face = self.mtcnn(foto)
+            face = self.mtcnn(foto_usuario)
             
             if face is None:
                 print("🔴 ❌ Nenhuma face detectada na imagem")
@@ -150,11 +164,14 @@ class Model:
         print("🔴 Gerando prova zk-SNARK...")
         
         try:
-            nova_foto = dados['nova_foto']
+            foto_base64 = dados['foto_nova']
             embedding_antiga = dados['embedding_antiga']
+
+            dados = base64.b64decode(foto_base64)
+            foto_nova = Image.open(BytesIO(dados))
             
             # 5. Gera nova embedding da foto atual
-            embedding_nova = self.gerar_embedding(nova_foto)
+            embedding_nova = self.gerar_embedding(foto_nova)
             
             if embedding_nova is None:
                 print("🔴 ❌ Não foi possível extrair embedding da nova foto")
@@ -200,7 +217,7 @@ class Model:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, port))
                 s.send(json.dumps(message).encode())
-                print(f"🔴 Mensagem enviada para {host}:{port}")
+                print(f"🔴 Mensagem de tamanho {len(json.dumps(message).encode())} enviada para {host}:{port}")
                 return True
         except Exception as e:
             print(f"🔴 Erro ao enviar mensagem: {e}")

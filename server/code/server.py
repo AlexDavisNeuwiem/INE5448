@@ -78,7 +78,13 @@ class Server:
         """Processa mensagens recebidas"""
         try:
             with conn:
-                data = conn.recv(4096)
+                data = b''
+                while True:
+                    chunk = conn.recv(4096)
+                    if not chunk:
+                        break
+                    data += chunk
+                print(f"🔵 Tamanho da mensagem recebida:", len(data))
                 if data:
                     message = json.loads(data.decode())
                     print(f"🔵 Mensagem recebida: {message['type']}")
@@ -256,7 +262,7 @@ class Server:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 s.connect((host, port))
                 s.send(json.dumps(message).encode())
-                print(f"🔵 Mensagem enviada para {host}:{port}")
+                print(f"🔵 Mensagem de tamanho {len(json.dumps(message).encode())} enviada para {host}:{port}")
                 return True
         except Exception as e:
             print(f"🔵 Erro ao enviar mensagem: {e}")
