@@ -4,26 +4,23 @@ Este projeto implementa um protocolo de registro biométrico seguro com três co
 
 ## Arquitetura
 
-### Componentes Principais:
+### Principais Componentes:
 
-🔵 Serviço do Usuário
-
-Gera chaves simétricas AES-256
-Criptografa/descriptografa embeddings
-Envia mensagens para outros serviços
-NÃO tem acesso ao banco de dados
-
-🟢 Serviço do Servidor
-
-Armazena embeddings criptografadas no PostgreSQL
-Retorna IDs únicos de registro
-NÃO tem acesso ao modelo de IA nem às chaves
-
-🔴 Serviço do Modelo de IA
+🔴 Modelo de IA
 
 Gera embeddings biométricas de 512 dimensões
 Simula processamento de reconhecimento facial
-NÃO tem acesso ao banco nem às chaves
+
+🟢 Usuário
+
+Gera chaves simétricas AES-256
+Criptografa/descriptografa embeddings
+Solicita registro e autenticação
+
+🔵 Servidor
+
+Armazena embeddings criptografadas no banco de dados
+Retorna IDs únicos de registro
 
 ### Fluxo do Protocolo
 
@@ -35,23 +32,17 @@ TODO
 .
 ├── docker-compose.yml
 ├── postgres/
-│   ├── .env
-│   └── data/
+│   ├── data/
+│   └── .env
 ├── server/
-│   ├── Dockerfile
-│   └── code/
-│       ├── requirements.txt
-│       └── server.py
+│   ├── code/
+│   └── Dockerfile
 ├── model/
-│   ├── Dockerfile
-│   └── code/
-│       ├── requirements.txt
-│       └── model.py
+│   ├── code/
+│   └── Dockerfile
 └── user/
-    ├── Dockerfile
-    └── code/
-│       ├── requirements.txt
-        └── user.py
+    ├── code/
+    └── Dockerfile
 ```
 
 ## Execução com Docker
@@ -87,9 +78,16 @@ docker-compose logs -f [NOME DO SERVIÇO]
 
 ## Tecnologias
 
-- Python 3: Linguagem principal
-- PostgreSQL: Banco de dados
-- Docker: Containerização
-- PyCryptodome: Criptografia AES
-- NumPy: Processamento numérico
+### Bibliotecas Python
+
+- PySnark: Geração das ZKPs
 - Psycopg2: Driver PostgreSQL
+- PyCryptodome: Criptografia AES
+- FaceNet-PyTorch: Processamento de imagens faciais
+
+## Outras ferramentas utilizadas
+
+- Docker: Containerização
+- PostgreSQL: Banco de dados
+
+
