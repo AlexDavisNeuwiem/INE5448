@@ -15,6 +15,11 @@ from enums import Addresses, ImagePath
 
 class User:
     def __init__(self):
+
+        print("\n" + "=" * 60)
+        print("🟢 INICIALIZANDO USUÁRIO")
+        print("=" * 60)
+
         # Chave simétrica para criptografia
         self.chave_simetrica = None
         self.user_id = None
@@ -28,14 +33,9 @@ class User:
         self.servidor_port = Addresses.SERVER_PORT.value
         self.modelo_host = Addresses.MODEL_HOST.value  
         self.modelo_port = Addresses.MODEL_PORT.value
-        
-        print("🟢 Usuario inicializado com sucesso")
     
     def executar(self):
         """Método principal que inicia o serviço do usuário"""
-        print("=" * 60)
-        print("🟢 INICIANDO SERVIÇO DO USUÁRIO")
-        print("=" * 60)
         
         # Inicia servidor para receber mensagens dos outros serviços
         servidor_thread = threading.Thread(target=self.iniciar_servidor)
@@ -64,7 +64,12 @@ class User:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((self.host, self.port))
                 s.listen(5)
+
                 print(f"🟢 Servidor escutando em {self.host}:{self.port}")
+
+                print("=" * 60)
+                print("🟢 USUÁRIO INICIALIZADO COM SUCESSO")
+                print("=" * 60)
                 
                 while True:
                     try:
@@ -126,7 +131,7 @@ class User:
         """Gera chave simétrica AES de 256 bits para criptografia"""
         print("🟢 Gerando chave simétrica AES-256...")
         self.chave_simetrica = get_random_bytes(32)  # 256 bits = 32 bytes
-        print("🟢 ✅ Chave simétrica gerada com sucesso")
+        print("🟢 Chave simétrica gerada com sucesso")
         return self.chave_simetrica
     
     def criptografar_embedding(self, embedding):
@@ -156,7 +161,7 @@ class User:
             'iv': base64.b64encode(cipher.iv).decode('utf-8')
         }
         
-        print("🟢 ✅ Embedding criptografada com sucesso")
+        print("🟢 Embedding criptografada com sucesso")
         return pacote_criptografado
     
     def descriptografar_embedding(self, pacote_criptografado):
@@ -179,7 +184,7 @@ class User:
         
         # Converte de volta para embedding
         embedding = json.loads(dados_sem_padding.decode('utf-8'))
-        print("🟢 ✅ Embedding descriptografada com sucesso")
+        print("🟢 Embedding descriptografada com sucesso")
         return embedding
     
     def enviar_mensagem(self, host, port, mensagem):
@@ -192,7 +197,7 @@ class User:
                 s.connect((host, port))
                 s.send(mensagem_json.encode())
                 
-            print(f"🟢 ✅ Mensagem enviada para {host}:{port} - Tamanho: {tamanho_mensagem} bytes")
+            print(f"🟢 Mensagem enviada para {host}:{port} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:
@@ -213,7 +218,7 @@ class User:
             imagem.save(buffer, format='JPEG')
             imagem_base64 = base64.b64encode(buffer.getvalue()).decode()
             
-            print(f"🟢 ✅ Imagem carregada - Tamanho: {len(imagem_base64)} caracteres")
+            print(f"🟢 Imagem carregada - Tamanho: {len(imagem_base64)} caracteres")
             return imagem_base64
             
         except Exception as e:
@@ -229,7 +234,7 @@ class User:
         print("=" * 60)
         
         # Etapa 1: Gerar chave simétrica
-        print("\n🟢 Etapa 1/4: Gerando chave de criptografia")
+        print("🟢 Etapa 1/4: Gerando chave de criptografia")
         self.gerar_chave_simetrica()
         
         # Etapa 2: Carregar foto do usuário
@@ -287,7 +292,6 @@ class User:
     
     def processar_id_registro(self, registration_id):
         """Processa ID de registro recebido do servidor"""
-        print(f"\n🟢 ✅ REGISTRO CONCLUÍDO COM SUCESSO!")
         print(f"🟢 ID do usuário: {registration_id}")
         print("=" * 60)
         print("🟢 FASE DE REGISTRO FINALIZADA")
@@ -297,7 +301,7 @@ class User:
         self.user_id = registration_id
         
         # Agenda processo de autenticação
-        print("🟢 Autenticação será iniciada em 3 segundos...")
+        print("\n" + "🟢 Autenticação será iniciada em 3 segundos...")
         threading.Timer(3.0, self.processo_autenticacao).start()
     
     # === PROCESSO DE AUTENTICAÇÃO ===
@@ -314,7 +318,7 @@ class User:
             return
         
         # Etapa 1: Solicitar embedding armazenada do servidor
-        print(f"\n🟢 Etapa 1/4: Solicitando embedding para ID {self.user_id}")
+        print(f"🟢 Etapa 1/4: Solicitando embedding para ID {self.user_id}")
         mensagem_servidor = {
             'type': 'get_embedding',
             'data': self.user_id,
@@ -406,4 +410,4 @@ class User:
         
         print("=" * 60)
         print("🟢 FASE DE AUTENTICAÇÃO FINALIZADA")
-        print("=" * 60)
+        print("=" * 60 + "\n")

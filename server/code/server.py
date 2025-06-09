@@ -11,6 +11,11 @@ from enums import Address, PostgesData, SnarkPath
 
 class Server:
     def __init__(self):
+
+        print("\n" + "=" * 60)
+        print("🔵 INICIALIZANDO SERVIDOR")
+        print("=" * 60)
+
         # Configurações de rede
         self.host = Address.HOST.value
         self.port = Address.PORT.value
@@ -22,14 +27,9 @@ class Server:
             'user': PostgesData.USER.value,
             'password': PostgesData.PASSWORD.value
         }
-        
-        print("\n" + "🔵 Servidor inicializado com sucesso")
     
     def executar(self):
         """Método principal que inicia o serviço do servidor"""
-        print("\n" + "=" * 60)
-        print("🔵 INICIANDO SERVIÇO DO SERVIDOR")
-        print("=" * 60)
         
         # Inicializa banco de dados
         self.inicializar_banco_dados()
@@ -61,7 +61,7 @@ class Server:
             cursor.close()
             conn.close()
             
-            print("🔵 ✅ Banco de dados inicializado com sucesso")
+            print("🔵 Banco de dados inicializado com sucesso")
             
         except Exception as e:
             print(f"🔵 ❌ Erro ao inicializar banco de dados: {e}")
@@ -76,7 +76,12 @@ class Server:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((self.host, self.port))
                 s.listen(5)
+
                 print(f"🔵 Servidor escutando em {self.host}:{self.port}")
+
+                print("=" * 60)
+                print("🔵 SERVIDOR INICIALIZADO COM SUCESSO")
+                print("=" * 60 + "\n")
                 
                 while True:
                     try:
@@ -146,7 +151,7 @@ class Server:
         embedding_id = self.armazenar_embedding(embedding_criptografada)
         
         if embedding_id:
-            print("🔵 ✅ Embedding armazenada com sucesso")
+            print("🔵 Embedding armazenada com sucesso")
             print(f"🔵 ID gerado: {embedding_id}")
             print("=" * 60)
             print("🔵 FASE DE REGISTRO CONCLUÍDA")
@@ -160,7 +165,7 @@ class Server:
         else:
             print("🔵 ❌ Falha ao armazenar embedding")
             print("=" * 60)
-            print("🔵 FASE DE REGISTRO FALHADA")
+            print("🔵 FASE DE REGISTRO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -182,10 +187,10 @@ class Server:
         embedding_criptografada = self.recuperar_embedding(user_id)
         
         if embedding_criptografada:
-            print("🔵 ✅ Embedding recuperada com sucesso")
+            print("🔵 Embedding recuperada com sucesso")
             print("=" * 60)
             print("🔵 FASE DE RECUPERAÇÃO CONCLUÍDA")
-            print("=" * 60)
+            print("=" * 60 + "\n")
             
             # Envia embedding criptografada de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
@@ -195,7 +200,7 @@ class Server:
         else:
             print("🔵 ❌ Embedding não encontrada")
             print("=" * 60)
-            print("🔵 FASE DE RECUPERAÇÃO FALHADA")
+            print("🔵 FASE DE RECUPERAÇÃO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -222,16 +227,14 @@ class Server:
         )
         
         if resultado.get('authenticated', False):
-            print("🔵 ✅ Prova verificada com sucesso - Usuário autenticado")
             print("=" * 60)
             print("🔵 FASE DE AUTENTICAÇÃO CONCLUÍDA COM SUCESSO")
             print("=" * 60)
         else:
-            print("🔵 ❌ Prova inválida - Autenticação rejeitada")
             print(f"🔵 Motivo: {resultado.get('reason', 'Não especificado')}")
             print("=" * 60)
-            print("🔵 FASE DE AUTENTICAÇÃO FALHADA")
-            print("=" * 60)
+            print("🔵 AUTENTICAÇÃO FALHOU")
+            print("=" * 60 + "\n")
         
         # Envia resultado de volta para o usuário
         self.enviar_resposta(endereco_retorno, {
@@ -262,7 +265,7 @@ class Server:
             cursor.close()
             conn.close()
             
-            print(f"🔵 ✅ Embedding armazenada no banco com ID: {embedding_id}")
+            print(f"🔵 Embedding armazenada no banco com ID: {embedding_id}")
             return str(embedding_id)
             
         except Exception as e:
@@ -292,7 +295,7 @@ class Server:
                     'data': resultado[0],
                     'iv': resultado[1]
                 }
-                print(f"🔵 ✅ Embedding recuperada do banco para ID: {embedding_id}")
+                print(f"🔵 Embedding recuperada do banco para ID: {embedding_id}")
                 return embedding_criptografada
             else:
                 print(f"🔵 ❌ Nenhuma embedding encontrada para ID: {embedding_id}")
@@ -344,7 +347,7 @@ class Server:
             else:
                 print("🔵 ❌ Prova zk-SNARK inválida - Autenticação rejeitada")
                 if resultado.stdout:
-                    print(f"🔵 Saída do script: {resultado.stdout}")
+                    print("\n" + f"🔵 Saída do script: {resultado.stdout}")
                 if resultado.stderr:
                     print(f"🔵 Erro do script: {resultado.stderr}")
                     
@@ -366,7 +369,7 @@ class Server:
         try:
             with open(caminho_arquivo, 'w') as arquivo:
                 json.dump(conteudo, arquivo, indent=2)
-            print(f"🔵 ✅ Arquivo salvo: {caminho_arquivo}")
+            print(f"🔵 Arquivo salvo: {caminho_arquivo}")
         except Exception as e:
             print(f"🔵 ❌ Erro ao escrever arquivo {caminho_arquivo}: {e}")
             raise e
@@ -382,7 +385,7 @@ class Server:
             sucesso = self.enviar_mensagem(host, porta, mensagem)
             
             if sucesso:
-                print(f"🔵 ✅ Resposta enviada para {endereco_retorno}")
+                print(f"🔵 Resposta enviada para {endereco_retorno}")
             else:
                 print(f"🔵 ❌ Falha ao enviar resposta para {endereco_retorno}")
                 
@@ -402,7 +405,7 @@ class Server:
                 s.connect((host, porta))
                 s.send(mensagem_json.encode())
                 
-            print(f"🔵 ✅ Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
+            print(f"🔵 Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:

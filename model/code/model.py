@@ -14,14 +14,17 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 
 class Model:
     def __init__(self):
+
+        print("\n" + "=" * 60)
+        print("🔴 INICIALIZANDO MODELO DE IA")
+        print("=" * 60)
+
         # Configurações de rede
         self.host = Address.HOST.value
         self.port = Address.PORT.value
 
         # Configuração do dispositivo (GPU ou CPU)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        
-        print("🔴 Inicializando modelo de reconhecimento facial...")
         
         # Detector de faces MTCNN
         print("🔴 Carregando detector de faces MTCNN...")
@@ -41,14 +44,9 @@ class Model:
         
         # Limiar de similaridade para correspondência facial
         self.limiar_similaridade = 0.7
-        
-        print("🔴 ✅ Modelo inicializado com sucesso")
 
     def executar(self):
         """Método principal que inicia o serviço do modelo"""
-        print("=" * 60)
-        print("🔴 INICIANDO SERVIÇO DO MODELO DE IA")
-        print("=" * 60)
         
         # Inicia servidor para receber mensagens
         self.iniciar_servidor()
@@ -60,7 +58,12 @@ class Model:
                 s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 s.bind((self.host, self.port))
                 s.listen(5)
+
                 print(f"🔴 Servidor escutando em {self.host}:{self.port}")
+
+                print("=" * 60)
+                print("🔴 MODELO DE IA INICIALIZADO COM SUCESSO")
+                print("=" * 60 + "\n")
                 
                 while True:
                     try:
@@ -118,19 +121,18 @@ class Model:
     
     def processar_solicitacao_embedding(self, foto_base64, endereco_retorno):
         """Processa solicitação de geração de embedding (fase de registro)"""
-        print("\n" + "=" * 50)
-        print("🔴 PROCESSANDO FASE DE REGISTRO")
-        print("=" * 50)
+        print("\n" + "=" * 60)
+        print("🔴 INICIANDO FASE DE REGISTRO")
+        print("=" * 60)
         print("🔴 Gerando embedding facial...")
         
         # Gera embedding da foto
         embedding = self.gerar_embedding(foto_base64)
         
         if embedding is not None:
-            print("🔴 ✅ Embedding gerada com sucesso")
-            print("=" * 50)
+            print("=" * 60)
             print("🔴 FASE DE REGISTRO CONCLUÍDA")
-            print("=" * 50)
+            print("=" * 60 + "\n")
             
             # Envia embedding de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
@@ -139,9 +141,9 @@ class Model:
             })
         else:
             print("🔴 ❌ Falha ao gerar embedding")
-            print("=" * 50)
-            print("🔴 FASE DE REGISTRO FALHADA")
-            print("=" * 50)
+            print("=" * 60)
+            print("🔴 FASE DE REGISTRO FALHOU")
+            print("=" * 60)
             
             # Envia erro de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
@@ -151,19 +153,18 @@ class Model:
     
     def processar_solicitacao_prova_snark(self, dados, endereco_retorno):
         """Processa solicitação de geração de prova zk-SNARK (fase de autenticação)"""
-        print("\n" + "=" * 50)
-        print("🔴 PROCESSANDO FASE DE AUTENTICAÇÃO")
-        print("=" * 50)
+        print("\n" + "=" * 60)
+        print("🔴 INICIANDO FASE DE AUTENTICAÇÃO")
+        print("=" * 60)
         print("🔴 Gerando prova zk-SNARK...")
         
         # Gera prova zk-SNARK
         dados_prova = self.gerar_prova_snark(dados)
         
         if dados_prova is not None:
-            print("🔴 ✅ Prova zk-SNARK gerada com sucesso")
-            print("=" * 50)
+            print("=" * 60)
             print("🔴 FASE DE AUTENTICAÇÃO CONCLUÍDA")
-            print("=" * 50)
+            print("=" * 60 + "\n")
             
             # Envia prova de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
@@ -176,9 +177,9 @@ class Model:
             })
         else:
             print("🔴 ❌ Falha ao gerar prova zk-SNARK")
-            print("=" * 50)
-            print("🔴 FASE DE AUTENTICAÇÃO FALHADA")
-            print("=" * 50)
+            print("=" * 60)
+            print("🔴 FASE DE AUTENTICAÇÃO FALHOU")
+            print("=" * 60)
             
             # Envia erro de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
@@ -215,7 +216,7 @@ class Model:
             # Converte tensor para lista para serialização JSON
             embedding_list = embedding.squeeze().cpu().numpy().tolist()
             
-            print(f"🔴 ✅ Embedding gerada - Dimensões: {len(embedding_list)}")
+            print(f"🔴 Embedding gerada - Dimensões: {len(embedding_list)}")
             return embedding_list
             
         except Exception as e:
@@ -302,7 +303,7 @@ class Model:
             sucesso = self.enviar_mensagem(host, porta, mensagem)
             
             if sucesso:
-                print(f"🔴 ✅ Resposta enviada para {endereco_retorno}")
+                print(f"🔴 Resposta enviada para {endereco_retorno}")
             else:
                 print(f"🔴 ❌ Falha ao enviar resposta para {endereco_retorno}")
                 
@@ -322,7 +323,7 @@ class Model:
                 s.connect((host, porta))
                 s.send(mensagem_json.encode())
                 
-            print(f"🔴 ✅ Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
+            print(f"🔴 Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:
