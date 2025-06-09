@@ -14,14 +14,16 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 
 class Model:
     def __init__(self):
+        # Configurações de rede
         self.host = Address.HOST.value
         self.port = Address.PORT.value
 
+        # Configuração do dispositivo (GPU ou CPU)
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
-        print("🔴 Inicializando sistema de reconhecimento facial...")
+        print("🔴 Inicializando modelo de reconhecimento facial...")
         
-        # Detector de faces
+        # Detector de faces MTCNN
         print("🔴 Carregando detector de faces MTCNN...")
         self.mtcnn = MTCNN(
             image_size=160, 
@@ -33,197 +35,299 @@ class Model:
             device=self.device
         )
         
-        # Modelo para embeddings faciais (pré-treinado no VGGFace2)
+        # Modelo InceptionResnetV1 pré-treinado no VGGFace2
         print("🔴 Carregando modelo de extração de características faciais...")
         self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
-        print("🔴 Modelo Carregado!")
+        
+        # Limiar de similaridade para correspondência facial
+        self.limiar_similaridade = 0.7
+        
+        print("🔴 ✅ Modelo inicializado com sucesso")
 
-        # Limiar de similaridade de cosseno para considerar uma correspondência
-        self.similarity_threshold = 0.7
-
-    def run(self):
-        """Inicia o serviço do modelo de IA"""
-        print("🔴 Iniciando serviço do modelo de IA...")
-        self._start_server()
+    def executar(self):
+        """Método principal que inicia o serviço do modelo"""
+        print("=" * 60)
+        print("🔴 INICIANDO SERVIÇO DO MODELO DE IA")
+        print("=" * 60)
+        
+        # Inicia servidor para receber mensagens
+        self.iniciar_servidor()
     
-    def _start_server(self):
-        """Inicia servidor para receber mensagens"""
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            s.bind((self.host, self.port))
-            s.listen(5)
-            print(f"🔴 Modelo listening on {self.host}:{self.port}")
-            
-            while True:
-                try:
-                    conn, addr = s.accept()
-                    thread = threading.Thread(target=self._handle_client, args=(conn, addr))
-                    thread.start()
-                except Exception as e:
-                    print(f"🔴 Erro no servidor: {e}")
-                except KeyboardInterrupt:
-                    print("\n🔴 Encerrando modelo de IA...")
-                    break
+    def iniciar_servidor(self):
+        """Inicia servidor TCP para receber mensagens de outros serviços"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind((self.host, self.port))
+                s.listen(5)
+                print(f"🔴 Servidor escutando em {self.host}:{self.port}")
+                
+                while True:
+                    try:
+                        conn, addr = s.accept()
+                        # Cria thread para cada conexão
+                        thread = threading.Thread(target=self.processar_cliente, args=(conn, addr))
+                        thread.start()
+                    except Exception as e:
+                        print(f"🔴 ❌ Erro no servidor: {e}")
+        except KeyboardInterrupt:
+            print("\n🔴 Encerrando serviço do modelo...")
+        except Exception as e:
+            print(f"🔴 ❌ Erro crítico no servidor: {e}")
     
-    def _handle_client(self, conn, addr):
-        """Processa mensagens recebidas"""
+    def processar_cliente(self, conn, addr):
+        """Processa mensagens recebidas de outros serviços"""
         try:
             with conn:
-                data = b''
+                # Recebe dados em chunks para mensagens grandes
+                dados_completos = b''
                 while True:
                     chunk = conn.recv(4096)
                     if not chunk:
                         break
-                    data += chunk
-                print(f"🔴 Tamanho da mensagem recebida:", len(data))
-                if data:
-                    message = json.loads(data.decode())
-                    print(f"🔴 Mensagem recebida: {message['type']}")
+                    dados_completos += chunk
+                
+                if dados_completos:
+                    print(f"🔴 Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
                     
-                    if message['type'] == 'generate_embedding':
-                        embedding = self.gerar_embedding(message['data'])
-                        
-                        # Envia embedding de volta para o usuário
-                        return_address = message['return_to'].split(':')
-                        self.enviar_mensagem(
-                            return_address[0], 
-                            int(return_address[1]),
-                            {
-                                'type': 'embedding',
-                                'data': embedding
-                            }
-                        )
+                    # Converte dados recebidos para JSON
+                    mensagem = json.loads(dados_completos.decode())
+                    tipo_mensagem = mensagem.get('type', 'desconhecido')
+                    print(f"🔴 Tipo da mensagem: {tipo_mensagem}")
                     
-                    elif message['type'] == 'generate_snark_proof':
-                        dados_verificacao = self.gerar_prova_snark(message['data'])
+                    # Processa mensagem baseada no tipo
+                    self.processar_mensagem(mensagem)
                         
-                        if dados_verificacao is not None:
-                            # Envia prova de volta para o usuário
-                            return_address = message['return_to'].split(':')
-                            self.enviar_mensagem(
-                                return_address[0], 
-                                int(return_address[1]),
-                                {
-                                    'type': 'snark_proof',
-                                    'data': {
-                                        'prova': dados_verificacao[0],
-                                        'chave': dados_verificacao[1],
-                                        'params': dados_verificacao[2]
-                                    }
-                                }
-                            )
-                        else:
-                            # Envia erro de volta para o usuário
-                            return_address = message['return_to'].split(':')
-                            self.enviar_mensagem(
-                                return_address[0], 
-                                int(return_address[1]),
-                                {
-                                    'type': 'snark_proof_error',
-                                    'data': {
-                                        'error': 'Falha ao gerar prova zk-SNARK'
-                                    }
-                                }
-                            )
-                        
+        except json.JSONDecodeError as e:
+            print(f"🔴 ❌ Erro ao decodificar JSON: {e}")
         except Exception as e:
-            print(f"🔴 Erro ao processar mensagem: {e}")
+            print(f"🔴 ❌ Erro ao processar cliente: {e}")
+    
+    def processar_mensagem(self, mensagem):
+        """Roteia mensagens baseado no tipo"""
+        tipo_mensagem = mensagem.get('type')
+        dados = mensagem.get('data')
+        endereco_retorno = mensagem.get('return_to')
+        
+        if tipo_mensagem == 'generate_embedding':
+            self.processar_solicitacao_embedding(dados, endereco_retorno)
+        elif tipo_mensagem == 'generate_snark_proof':
+            self.processar_solicitacao_prova_snark(dados, endereco_retorno)
+        else:
+            print(f"🔴 ⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
+    
+    def processar_solicitacao_embedding(self, foto_base64, endereco_retorno):
+        """Processa solicitação de geração de embedding (fase de registro)"""
+        print("\n" + "=" * 50)
+        print("🔴 PROCESSANDO FASE DE REGISTRO")
+        print("=" * 50)
+        print("🔴 Gerando embedding facial...")
+        
+        # Gera embedding da foto
+        embedding = self.gerar_embedding(foto_base64)
+        
+        if embedding is not None:
+            print("🔴 ✅ Embedding gerada com sucesso")
+            print("=" * 50)
+            print("🔴 FASE DE REGISTRO CONCLUÍDA")
+            print("=" * 50)
+            
+            # Envia embedding de volta para o usuário
+            self.enviar_resposta(endereco_retorno, {
+                'type': 'embedding',
+                'data': embedding
+            })
+        else:
+            print("🔴 ❌ Falha ao gerar embedding")
+            print("=" * 50)
+            print("🔴 FASE DE REGISTRO FALHADA")
+            print("=" * 50)
+            
+            # Envia erro de volta para o usuário
+            self.enviar_resposta(endereco_retorno, {
+                'type': 'embedding_error',
+                'data': None
+            })
+    
+    def processar_solicitacao_prova_snark(self, dados, endereco_retorno):
+        """Processa solicitação de geração de prova zk-SNARK (fase de autenticação)"""
+        print("\n" + "=" * 50)
+        print("🔴 PROCESSANDO FASE DE AUTENTICAÇÃO")
+        print("=" * 50)
+        print("🔴 Gerando prova zk-SNARK...")
+        
+        # Gera prova zk-SNARK
+        dados_prova = self.gerar_prova_snark(dados)
+        
+        if dados_prova is not None:
+            print("🔴 ✅ Prova zk-SNARK gerada com sucesso")
+            print("=" * 50)
+            print("🔴 FASE DE AUTENTICAÇÃO CONCLUÍDA")
+            print("=" * 50)
+            
+            # Envia prova de volta para o usuário
+            self.enviar_resposta(endereco_retorno, {
+                'type': 'snark_proof',
+                'data': {
+                    'prova': dados_prova[0],
+                    'chave': dados_prova[1],
+                    'params': dados_prova[2]
+                }
+            })
+        else:
+            print("🔴 ❌ Falha ao gerar prova zk-SNARK")
+            print("=" * 50)
+            print("🔴 FASE DE AUTENTICAÇÃO FALHADA")
+            print("=" * 50)
+            
+            # Envia erro de volta para o usuário
+            self.enviar_resposta(endereco_retorno, {
+                'type': 'snark_proof_error',
+                'data': {
+                    'error': 'Falha ao gerar prova zk-SNARK'
+                }
+            })
     
     def gerar_embedding(self, foto_base64):
-        """Gera embedding biométrica a partir da foto"""
-        print("🔴 Gerando embedding da foto...")
-
+        """Gera embedding biométrica a partir da foto em base64"""
         try:
-
-            dados = base64.b64decode(foto_base64)
-            foto_usuario = Image.open(BytesIO(dados))
-
-            # Detecta face
-            face = self.mtcnn(foto_usuario)
+            print("🔴 Decodificando imagem base64...")
+            
+            # Decodifica imagem base64
+            dados_imagem = base64.b64decode(foto_base64)
+            imagem = Image.open(BytesIO(dados_imagem))
+            
+            print("🔴 Detectando face na imagem...")
+            
+            # Detecta e extrai face da imagem
+            face = self.mtcnn(imagem)
             
             if face is None:
                 print("🔴 ❌ Nenhuma face detectada na imagem")
                 return None
 
-            # Gera embedding facial (normalizado)
+            print("🔴 Extraindo características faciais...")
+            
+            # Gera embedding facial usando o modelo InceptionResnetV1
             with torch.no_grad():
                 embedding = self.resnet(face.unsqueeze(0).to(self.device))
             
             # Converte tensor para lista para serialização JSON
             embedding_list = embedding.squeeze().cpu().numpy().tolist()
             
-            print(f"🔴 Embedding gerada com sucesso!")
+            print(f"🔴 ✅ Embedding gerada - Dimensões: {len(embedding_list)}")
             return embedding_list
             
         except Exception as e:
-            print(f"🔴 Erro ao gerar embedding: {e}")
+            print(f"🔴 ❌ Erro ao gerar embedding: {e}")
             return None
-
     
-    def gerar_prova_snark(self, mensagem):
-        """Gera prova zk-SNARK para similaridade de embeddings"""
-        print("🔴 Gerando prova zk-SNARK...")
-        
+    def gerar_prova_snark(self, dados_mensagem):
+        """Gera prova zk-SNARK para verificação de similaridade facial"""
         try:
-            foto_base64 = mensagem['foto_nova']
-            embedding_antiga = mensagem['embedding_antiga']
+            foto_nova_base64 = dados_mensagem['foto_nova']
+            embedding_antiga = dados_mensagem['embedding_antiga']
             
-            # 5. Gera nova embedding da foto atual
-            embedding_nova = self.gerar_embedding(foto_base64)
+            print("🔴 Gerando embedding da nova foto...")
+            
+            # Gera nova embedding da foto atual
+            embedding_nova = self.gerar_embedding(foto_nova_base64)
             
             if embedding_nova is None:
                 print("🔴 ❌ Não foi possível extrair embedding da nova foto")
                 return None
 
-            # Salvar os dados temporariamente em JSON
+            print("🔴 Preparando dados para geração da prova zk-SNARK...")
+            
+            # Salva dados temporariamente para o script zk-SNARK
+            dados_witness = {
+                'embedding1': embedding_antiga,
+                'embedding2': embedding_nova,
+                'threshold': self.limiar_similaridade
+            }
+            
             with open(SnarkPath.WITNESS.value, 'w') as arquivo:
-                json.dump({
-                    'embedding1': embedding_antiga,
-                    'embedding2': embedding_nova,
-                    'threshold': self.similarity_threshold
-                }, arquivo)
+                json.dump(dados_witness, arquivo)
+            
+            print("🔴 Executando script zk-SNARK...")
 
-            # Executar o script .sh, passando o caminho do arquivo como argumento
-            resultado = subprocess.run(f'/bin/bash /home/model/pysnark/snark.sh', capture_output=True, text=True, shell=True)
+            # Executa o script de geração da prova zk-SNARK
+            resultado = subprocess.run(
+                '/bin/bash /home/model/pysnark/snark.sh', 
+                capture_output=True, 
+                text=True, 
+                shell=True
+            )
             
             if resultado.returncode != 0:
                 print(f"🔴 ❌ Erro ao executar script SNARK: {resultado.stderr}")
                 return None
 
-            prova = self.le_arquivo(SnarkPath.PROOF.value)
-            chave = self.le_arquivo(SnarkPath.VERIFICATION_KEY.value)
-            params = self.le_arquivo(SnarkPath.PUBLIC_PARAMETERS.value)
+            print("🔴 Carregando arquivos da prova zk-SNARK...")
+            
+            # Carrega os arquivos gerados pelo script zk-SNARK
+            prova = self.carregar_arquivo_json(SnarkPath.PROOF.value)
+            chave_verificacao = self.carregar_arquivo_json(SnarkPath.VERIFICATION_KEY.value)
+            parametros_publicos = self.carregar_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value)
 
-            print(f"🔴 Prova zk-SNARK gerada com sucesso")
+            if not all([prova, chave_verificacao, parametros_publicos]):
+                print("🔴 ❌ Falha ao carregar arquivos da prova zk-SNARK")
+                return None
 
-            return (prova, chave, params)
-
+            print("🔴 ✅ Prova zk-SNARK gerada com sucesso")
+            return (prova, chave_verificacao, parametros_publicos)
             
         except Exception as e:
-            print(f"🔴 Erro ao gerar prova zk-SNARK: {e}")
+            print(f"🔴 ❌ Erro ao gerar prova zk-SNARK: {e}")
             return None
-
     
-    def enviar_mensagem(self, host, port, message):
-        """Envia mensagem para outros serviços"""
+    def carregar_arquivo_json(self, caminho_arquivo):
+        """Carrega e retorna conteúdo de arquivo JSON"""
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                s.connect((host, port))
-                s.send(json.dumps(message).encode())
-                print(f"🔴 Mensagem de tamanho {len(json.dumps(message).encode())} enviada para {host}:{port}")
-                return True
-        except Exception as e:
-            print(f"🔴 Erro ao enviar mensagem: {e}")
-            return False
-
-    def le_arquivo(self, caminho):
-        """Converte arquivo JSON para bytes"""
-        try:
-            # 1. Abre e carrega o conteúdo do arquivo .json
-            with open(caminho, 'r') as arquivo_json:
-                conteudo = json.load(arquivo_json)
-
+            with open(caminho_arquivo, 'r') as arquivo:
+                conteudo = json.load(arquivo)
             return conteudo
         except Exception as e:
-            print(f"🔴 Erro ao converter arquivo {caminho} para bytes: {e}")
+            print(f"🔴 ❌ Erro ao carregar arquivo {caminho_arquivo}: {e}")
             return None
+    
+    def enviar_resposta(self, endereco_retorno, mensagem):
+        """Envia resposta de volta para o serviço solicitante"""
+        try:
+            # Divide endereço de retorno em host e porta
+            host, porta = endereco_retorno.split(':')
+            porta = int(porta)
+            
+            # Envia mensagem
+            sucesso = self.enviar_mensagem(host, porta, mensagem)
+            
+            if sucesso:
+                print(f"🔴 ✅ Resposta enviada para {endereco_retorno}")
+            else:
+                print(f"🔴 ❌ Falha ao enviar resposta para {endereco_retorno}")
+                
+            return sucesso
+            
+        except Exception as e:
+            print(f"🔴 ❌ Erro ao processar endereço de retorno: {e}")
+            return False
+    
+    def enviar_mensagem(self, host, porta, mensagem):
+        """Envia mensagem JSON para outros serviços via TCP"""
+        try:
+            mensagem_json = json.dumps(mensagem)
+            tamanho_mensagem = len(mensagem_json.encode())
+            
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((host, porta))
+                s.send(mensagem_json.encode())
+                
+            print(f"🔴 ✅ Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
+            return True
+            
+        except ConnectionRefusedError:
+            print(f"🔴 ❌ Conexão recusada para {host}:{porta}")
+            return False
+        except Exception as e:
+            print(f"🔴 ❌ Erro ao enviar mensagem: {e}")
+            return False
