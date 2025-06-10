@@ -2,5 +2,3 @@ torch
 pillow
 opencv-python
 facenet-pytorch
-
-git+https://github.com/meilof/pysnark

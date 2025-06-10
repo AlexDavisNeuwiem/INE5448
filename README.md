@@ -80,7 +80,7 @@ docker-compose logs -f [NOME DO SERVIÇO]
 
 ### Bibliotecas Python
 
-- PySnark: Geração das ZKPs
+- snarkJS: Geração das ZKPs
 - Psycopg2: Driver PostgreSQL
 - PyCryptodome: Criptografia AES
 - FaceNet-PyTorch: Processamento de imagens faciais

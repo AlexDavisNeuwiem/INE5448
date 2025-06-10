@@ -11,6 +11,22 @@ RUN apt-get update && \
     build-essential cmake git python3 python3-full \
     && mkdir /home/model/
 
+# Instalando Rust
+ENV CARGO_HOME=/usr/local/cargo
+ENV RUSTUP_HOME=/usr/local/rustup
+ENV PATH="/usr/local/cargo/bin:$PATH"
+RUN curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh -s -- -y && \
+    . "$CARGO_HOME/env" && \
+    rustup default stable
+
+# Instalando Circom
+RUN . "$CARGO_HOME/env" && \
+    git clone https://github.com/iden3/circom.git && \
+    cd circom && \
+    cargo build --release && \
+    cargo install --path circom && \
+    cd ..
+
 # Instalando nvm e snarkjs
 ENV NVM_DIR=/root/.nvm
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash && \

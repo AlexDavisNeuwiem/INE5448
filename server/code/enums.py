@@ -11,8 +11,12 @@ class PostgesData(Enum):
     PASSWORD = '123456'
 
 class SnarkPath(Enum):
-    VERIFICATION_KEY = '/home/server/pysnark/verification_key.json'
+    SNARKJS_DIR = '/home/server/snarkjs/'
 
-    PROOF = '/home/server/pysnark/proof.json'
+    SCRIPT = '/bin/bash ' + SNARKJS_DIR + 'verify_proof.sh'
 
-    PUBLIC_PARAMETERS= '/home/server/pysnark/public_parameters.json'
+    VERIFICATION_KEY = SNARKJS_DIR + 'inputs/verification_key.json'
+
+    PROOF = SNARKJS_DIR + 'inputs/proof.json'
+
+    PUBLIC_PARAMETERS= SNARKJS_DIR + 'inputs/public_parameters.json'

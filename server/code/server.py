@@ -329,9 +329,10 @@ class Server:
             
             # Executa o script de verificação SNARK
             resultado = subprocess.run(
-                ['/bin/bash', '/home/server/pysnark/verify.sh'], 
+                SnarkPath.SCRIPT.value, 
                 capture_output=True, 
-                text=True
+                text=True,
+                shell=True
             )
             
             print(f"🔵 Script executado - Código de retorno: {resultado.returncode}")

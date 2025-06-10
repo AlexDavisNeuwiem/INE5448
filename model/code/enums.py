@@ -4,12 +4,24 @@ class Address(Enum):
     HOST = '0.0.0.0'
     PORT = 8002
 
+class Adjustments(Enum):
+    DIMENSIONS = 512
+
+    THRESHOLD = 0.7
+
+    SCALE = 100_000_000_000_000_000
+
 class SnarkPath(Enum):
+    TRUSTED_SETUP_DIR = '/home/model/snarkjs/trusted_setup/'
 
-    WITNESS =  '/home/model/pysnark/witness.json'
+    PROOF_GENERATION_DIR = '/home/model/snarkjs/proof_generation/'
 
-    VERIFICATION_KEY = '/home/model/pysnark/verification_key.json'
+    SCRIPT = '/bin/bash /home/model/snarkjs/snarkjs.sh'
 
-    PROOF = '/home/model/pysnark/proof.json'
+    WITNESS =  PROOF_GENERATION_DIR + 'inputs/input.json'
 
-    PUBLIC_PARAMETERS= '/home/model/pysnark/public_parameters.json'
+    VERIFICATION_KEY = TRUSTED_SETUP_DIR + 'outputs/verification_key.json'
+
+    PROOF = PROOF_GENERATION_DIR + 'outputs/proof.json'
+
+    PUBLIC_PARAMETERS= PROOF_GENERATION_DIR + 'outputs/public_parameters.json'

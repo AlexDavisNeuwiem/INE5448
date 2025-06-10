@@ -18,8 +18,23 @@ venv/
 # VC Code
 vscode/
 
+# Powers of Tau
+*.ptau
+
 # Witness
 *.wtns
 
 # Circuits
 *.r1cs
+
+# JavaScript
+*.js
+
+# Web Assembly
+*.wasm
+
+# Symbols File
+*.sym
+
+# Chaves
+*.zkey

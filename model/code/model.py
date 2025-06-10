@@ -8,7 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 import torch
-from enums import Address, SnarkPath
+from enums import Address, Adjustments, SnarkPath
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 
@@ -43,7 +43,7 @@ class Model:
         self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
         
         # Limiar de similaridade para correspondência facial
-        self.limiar_similaridade = 0.7
+        self.limiar_similaridade = int(Adjustments.THRESHOLD.value * Adjustments.SCALE.value)
 
     def executar(self):
         """Método principal que inicia o serviço do modelo"""
@@ -215,6 +215,10 @@ class Model:
             
             # Converte tensor para lista para serialização JSON
             embedding_list = embedding.squeeze().cpu().numpy().tolist()
+
+            # Ajusta o vetor para ser aceito pelo circom
+            for i in range(Adjustments.DIMENSIONS.value):
+                embedding_list[i] = int(embedding_list[i] * Adjustments.SCALE.value)
             
             print(f"🔴 Embedding gerada - Dimensões: {len(embedding_list)}")
             return embedding_list
@@ -239,7 +243,7 @@ class Model:
                 return None
 
             print("🔴 Preparando dados para geração da prova zk-SNARK...")
-            
+
             # Salva dados temporariamente para o script zk-SNARK
             dados_witness = {
                 'embedding1': embedding_antiga,
@@ -254,9 +258,9 @@ class Model:
 
             # Executa o script de geração da prova zk-SNARK
             resultado = subprocess.run(
-                '/bin/bash /home/model/pysnark/snark.sh', 
-                capture_output=True, 
-                text=True, 
+                SnarkPath.SCRIPT.value,
+                capture_output=True,
+                text=True,
                 shell=True
             )
             
