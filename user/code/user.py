@@ -301,7 +301,7 @@ class User:
         self.user_id = registration_id
         
         # Agenda processo de autenticação
-        print("\n" + "🟢 Autenticação será iniciada em 3 segundos...")
+        print("\n" + Color.GREEN.value + " Autenticação será iniciada em 3 segundos...")
         threading.Timer(3.0, self.processo_autenticacao).start()
     
     # === PROCESSO DE AUTENTICAÇÃO ===

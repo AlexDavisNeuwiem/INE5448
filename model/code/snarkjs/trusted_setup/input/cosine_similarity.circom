@@ -1,98 +1,52 @@
 pragma circom 2.0.0;
 
-// Template para calcular produto escalar
-template ProdEsc(n) {
-    signal input a[n];
-    signal input b[n];
-    signal output out;
-    
-    signal products[n];
-    signal sums[n];
-    
-    // Produtos elemento por elemento
-    for (var i = 0; i < n; i++) {
-        products[i] <== a[i] * b[i];
-    }
-    
-    // Soma acumulativa
-    sums[0] <== products[0];
-    for (var i = 1; i < n; i++) {
-        sums[i] <== sums[i-1] + products[i];
-    }
-    
-    out <== sums[n-1];
-}
-
-// Template para calcular norma ao quadrado
-template NormaQuad(n) {
-    signal input vec[n];
-    signal output out;
-    
-    signal squares[n];
-    signal sums[n];
-    
-    // Quadrados
-    for (var i = 0; i < n; i++) {
-        squares[i] <== vec[i] * vec[i];
-    }
-    
-    // Soma acumulativa
-    sums[0] <== squares[0];
-    for (var i = 1; i < n; i++) {
-        sums[i] <== sums[i-1] + squares[i];
-    }
-    
-    out <== sums[n-1];
-}
-
 // Template principal
 template SimilaridadeCossenos() {
+    // Dimensões dos vetores
     var n = 512;
     
-    // Inputs
+    // Entradas
     signal input embedding1[n];
     signal input embedding2[n];
     signal input threshold;
     
-    // Output
+    // Saida
     signal output resultado; // 1 se similaridade > threshold, 0 caso contrário
     
-    // Componentes
-    component dot = ProdEsc(n);
-    component norm1 = NormaQuad(n);
-    component norm2 = NormaQuad(n);
+    // Variáveis resultantes das somas
+    var produto_escalar = 0;
+    var norma1_quadrado = 0;
+    var norma2_quadrado = 0;
+
+    // Variáveis resultantes dos produtos
+    var prod12 = 1;
+    var prod11 = 1;
+    var prod22 = 1;
     
-    // Conectar inputs
+    // 
     for (var i = 0; i < n; i++) {
-        dot.a[i] <== embedding1[i];
-        dot.b[i] <== embedding2[i];
-        norm1.vec[i] <== embedding1[i];
-        norm2.vec[i] <== embedding2[i];
+        prod12 = embedding1[i] * embedding2[i];
+        produto_escalar += prod12;
+        prod11 = embedding1[i] * embedding1[i];
+        norma1_quadrado += prod11;
+        prod22 = embedding2[i] * embedding2[i];
+        norma2_quadrado += prod22;
     }
+
+    var quadrado_produto_escalar = produto_escalar * produto_escalar;
+
+    var produto_normas_quadrado = norma1_quadrado * norma2_quadrado;
+
+    // produto_normas_quadrado não pode ser zero
+    var similaridade = quadrado_produto_escalar / produto_normas_quadrado;
+
+    var limiar = threshold * threshold;
     
-    // Obter resultadoados
-    signal dot_product <== dot.out;
-    signal norm1_sq <== norm1.out;
-    signal norm2_sq <== norm2.out;
+    // Se similaridade >= limiar, então resultado = 1, senão resultado = 0
+    resultado <-- (similaridade >= limiar) ? 1 : 0;
     
-    // Calcular termos da comparação
-    // Queremos verificar: dot_product^2 > threshold^2 * norm1_sq * norm2_sq
-    signal dot_sq <== dot_product * dot_product;
-    signal threshold_sq <== threshold * threshold;
-    signal norms_product <== norm1_sq * norm2_sq;
-    signal right_side <== threshold_sq * norms_product;
-    
-    // Diferença
-    signal diff <== dot_sq - right_side;
-    
-    // Se diff > 0, então resultado = 1, senão resultado = 0
-    // Implementação simples: assumimos que se chamamos o circuito,
-    // já sabemos o resultadoado esperado
-    resultado <-- (dot_sq > right_side) ? 1 : 0;
-    
-    // Constraints para garantir integridade
-    resultado * (resultado - 1) === 0; // resultado é 0 ou 1
-    
+    // Constraints para garantir integridade, o resultado é 0 ou 1
+    resultado * (resultado - 1) === 0;
 }
 
-component main = SimilaridadeCossenos();
+component main {public [threshold]} = SimilaridadeCossenos();
