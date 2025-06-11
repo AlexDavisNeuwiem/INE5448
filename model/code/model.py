@@ -8,7 +8,7 @@ from PIL import Image
 from io import BytesIO
 
 import torch
-from enums import Address, Adjustments, SnarkPath
+from enums import Address, Adjustments, Color, SnarkPath
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 
@@ -16,7 +16,7 @@ class Model:
     def __init__(self):
 
         print("\n" + "=" * 60)
-        print("🔴 INICIALIZANDO MODELO DE IA")
+        print(Color.RED.value + " INICIALIZANDO MODELO DE IA")
         print("=" * 60)
 
         # Configurações de rede
@@ -27,7 +27,7 @@ class Model:
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
         
         # Detector de faces MTCNN
-        print("🔴 Carregando detector de faces MTCNN...")
+        print(Color.RED.value + " Carregando detector de faces MTCNN...")
         self.mtcnn = MTCNN(
             image_size=160, 
             margin=20, 
@@ -39,7 +39,7 @@ class Model:
         )
         
         # Modelo InceptionResnetV1 pré-treinado no VGGFace2
-        print("🔴 Carregando modelo de extração de características faciais...")
+        print(Color.RED.value + " Carregando modelo de extração de características faciais...")
         self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
         
         # Limiar de similaridade para correspondência facial
@@ -59,10 +59,10 @@ class Model:
                 s.bind((self.host, self.port))
                 s.listen(5)
 
-                print(f"🔴 Servidor escutando em {self.host}:{self.port}")
+                print(Color.RED.value + f" Servidor escutando em {self.host}:{self.port}")
 
                 print("=" * 60)
-                print("🔴 MODELO DE IA INICIALIZADO COM SUCESSO")
+                print(Color.RED.value + " MODELO DE IA INICIALIZADO COM SUCESSO")
                 print("=" * 60 + "\n")
                 
                 while True:
@@ -72,11 +72,11 @@ class Model:
                         thread = threading.Thread(target=self.processar_cliente, args=(conn, addr))
                         thread.start()
                     except Exception as e:
-                        print(f"🔴 ❌ Erro no servidor: {e}")
+                        print(Color.RED.value + f"❌ Erro no servidor: {e}")
         except KeyboardInterrupt:
-            print("\n🔴 Encerrando serviço do modelo...")
+            print("\n" + Color.RED.value + " Encerrando serviço do modelo...")
         except Exception as e:
-            print(f"🔴 ❌ Erro crítico no servidor: {e}")
+            print(Color.RED.value + f"❌ Erro crítico no servidor: {e}")
     
     def processar_cliente(self, conn, addr):
         """Processa mensagens recebidas de outros serviços"""
@@ -91,20 +91,20 @@ class Model:
                     dados_completos += chunk
                 
                 if dados_completos:
-                    print(f"🔴 Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
+                    print(Color.RED.value + f" Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
                     
                     # Converte dados recebidos para JSON
                     mensagem = json.loads(dados_completos.decode())
                     tipo_mensagem = mensagem.get('type', 'desconhecido')
-                    print(f"🔴 Tipo da mensagem: {tipo_mensagem}")
+                    print(Color.RED.value + f" Tipo da mensagem: {tipo_mensagem}")
                     
                     # Processa mensagem baseada no tipo
                     self.processar_mensagem(mensagem)
                         
         except json.JSONDecodeError as e:
-            print(f"🔴 ❌ Erro ao decodificar JSON: {e}")
+            print(Color.RED.value + f"❌ Erro ao decodificar JSON: {e}")
         except Exception as e:
-            print(f"🔴 ❌ Erro ao processar cliente: {e}")
+            print(Color.RED.value + f"❌ Erro ao processar cliente: {e}")
     
     def processar_mensagem(self, mensagem):
         """Roteia mensagens baseado no tipo"""
@@ -117,21 +117,21 @@ class Model:
         elif tipo_mensagem == 'generate_snark_proof':
             self.processar_solicitacao_prova_snark(dados, endereco_retorno)
         else:
-            print(f"🔴 ⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
+            print(Color.RED.value + f"⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
     
     def processar_solicitacao_embedding(self, foto_base64, endereco_retorno):
         """Processa solicitação de geração de embedding (fase de registro)"""
         print("\n" + "=" * 60)
-        print("🔴 INICIANDO FASE DE REGISTRO")
+        print(Color.RED.value + " INICIANDO FASE DE REGISTRO")
         print("=" * 60)
-        print("🔴 Gerando embedding facial...")
+        print(Color.RED.value + " Gerando embedding facial...")
         
         # Gera embedding da foto
         embedding = self.gerar_embedding(foto_base64)
         
         if embedding is not None:
             print("=" * 60)
-            print("🔴 FASE DE REGISTRO CONCLUÍDA")
+            print(Color.RED.value + " FASE DE REGISTRO CONCLUÍDA")
             print("=" * 60 + "\n")
             
             # Envia embedding de volta para o usuário
@@ -140,9 +140,9 @@ class Model:
                 'data': embedding
             })
         else:
-            print("🔴 ❌ Falha ao gerar embedding")
+            print(Color.RED.value + "❌ Falha ao gerar embedding")
             print("=" * 60)
-            print("🔴 FASE DE REGISTRO FALHOU")
+            print(Color.RED.value + " FASE DE REGISTRO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -154,16 +154,16 @@ class Model:
     def processar_solicitacao_prova_snark(self, dados, endereco_retorno):
         """Processa solicitação de geração de prova zk-SNARK (fase de autenticação)"""
         print("\n" + "=" * 60)
-        print("🔴 INICIANDO FASE DE AUTENTICAÇÃO")
+        print(Color.RED.value + " INICIANDO FASE DE AUTENTICAÇÃO")
         print("=" * 60)
-        print("🔴 Gerando prova zk-SNARK...")
+        print(Color.RED.value + " Gerando prova zk-SNARK...")
         
         # Gera prova zk-SNARK
         dados_prova = self.gerar_prova_snark(dados)
         
         if dados_prova is not None:
             print("=" * 60)
-            print("🔴 FASE DE AUTENTICAÇÃO CONCLUÍDA")
+            print(Color.RED.value + " FASE DE AUTENTICAÇÃO CONCLUÍDA")
             print("=" * 60 + "\n")
             
             # Envia prova de volta para o usuário
@@ -176,9 +176,9 @@ class Model:
                 }
             })
         else:
-            print("🔴 ❌ Falha ao gerar prova zk-SNARK")
+            print(Color.RED.value + "❌ Falha ao gerar prova zk-SNARK")
             print("=" * 60)
-            print("🔴 FASE DE AUTENTICAÇÃO FALHOU")
+            print(Color.RED.value + " FASE DE AUTENTICAÇÃO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -192,22 +192,22 @@ class Model:
     def gerar_embedding(self, foto_base64):
         """Gera embedding biométrica a partir da foto em base64"""
         try:
-            print("🔴 Decodificando imagem base64...")
+            print(Color.RED.value + " Decodificando imagem base64...")
             
             # Decodifica imagem base64
             dados_imagem = base64.b64decode(foto_base64)
             imagem = Image.open(BytesIO(dados_imagem))
             
-            print("🔴 Detectando face na imagem...")
+            print(Color.RED.value + " Detectando face na imagem...")
             
             # Detecta e extrai face da imagem
             face = self.mtcnn(imagem)
             
             if face is None:
-                print("🔴 ❌ Nenhuma face detectada na imagem")
+                print(Color.RED.value + "❌ Nenhuma face detectada na imagem")
                 return None
 
-            print("🔴 Extraindo características faciais...")
+            print(Color.RED.value + " Extraindo características faciais...")
             
             # Gera embedding facial usando o modelo InceptionResnetV1
             with torch.no_grad():
@@ -220,11 +220,11 @@ class Model:
             for i in range(Adjustments.DIMENSIONS.value):
                 embedding_list[i] = int(embedding_list[i] * Adjustments.SCALE.value)
             
-            print(f"🔴 Embedding gerada - Dimensões: {len(embedding_list)}")
+            print(Color.RED.value + f" Embedding gerada - Dimensões: {len(embedding_list)}")
             return embedding_list
             
         except Exception as e:
-            print(f"🔴 ❌ Erro ao gerar embedding: {e}")
+            print(Color.RED.value + f"❌ Erro ao gerar embedding: {e}")
             return None
     
     def gerar_prova_snark(self, dados_mensagem):
@@ -233,16 +233,16 @@ class Model:
             foto_nova_base64 = dados_mensagem['foto_nova']
             embedding_antiga = dados_mensagem['embedding_antiga']
             
-            print("🔴 Gerando embedding da nova foto...")
+            print(Color.RED.value + " Gerando embedding da nova foto...")
             
             # Gera nova embedding da foto atual
             embedding_nova = self.gerar_embedding(foto_nova_base64)
             
             if embedding_nova is None:
-                print("🔴 ❌ Não foi possível extrair embedding da nova foto")
+                print(Color.RED.value + "❌ Não foi possível extrair embedding da nova foto")
                 return None
 
-            print("🔴 Preparando dados para geração da prova zk-SNARK...")
+            print(Color.RED.value + " Preparando dados para geração da prova zk-SNARK...")
 
             # Salva dados temporariamente para o script zk-SNARK
             dados_witness = {
@@ -254,7 +254,7 @@ class Model:
             with open(SnarkPath.WITNESS.value, 'w') as arquivo:
                 json.dump(dados_witness, arquivo)
             
-            print("🔴 Executando script zk-SNARK...")
+            print(Color.RED.value + " Executando script zk-SNARK...")
 
             # Executa o script de geração da prova zk-SNARK
             resultado = subprocess.run(
@@ -265,10 +265,10 @@ class Model:
             )
             
             if resultado.returncode != 0:
-                print(f"🔴 ❌ Erro ao executar script SNARK: {resultado.stderr}")
+                print(Color.RED.value + f"❌ Erro ao executar script SNARK: {resultado.stderr}")
                 return None
 
-            print("🔴 Carregando arquivos da prova zk-SNARK...")
+            print(Color.RED.value + " Carregando arquivos da prova zk-SNARK...")
             
             # Carrega os arquivos gerados pelo script zk-SNARK
             prova = self.carregar_arquivo_json(SnarkPath.PROOF.value)
@@ -276,14 +276,14 @@ class Model:
             parametros_publicos = self.carregar_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value)
 
             if not all([prova, chave_verificacao, parametros_publicos]):
-                print("🔴 ❌ Falha ao carregar arquivos da prova zk-SNARK")
+                print(Color.RED.value + "❌ Falha ao carregar arquivos da prova zk-SNARK")
                 return None
 
-            print("🔴 ✅ Prova zk-SNARK gerada com sucesso")
+            print(Color.RED.value + " ✅ Prova zk-SNARK gerada com sucesso")
             return (prova, chave_verificacao, parametros_publicos)
             
         except Exception as e:
-            print(f"🔴 ❌ Erro ao gerar prova zk-SNARK: {e}")
+            print(Color.RED.value + f"❌ Erro ao gerar prova zk-SNARK: {e}")
             return None
     
     def carregar_arquivo_json(self, caminho_arquivo):
@@ -293,7 +293,7 @@ class Model:
                 conteudo = json.load(arquivo)
             return conteudo
         except Exception as e:
-            print(f"🔴 ❌ Erro ao carregar arquivo {caminho_arquivo}: {e}")
+            print(Color.RED.value + f"❌ Erro ao carregar arquivo {caminho_arquivo}: {e}")
             return None
     
     def enviar_resposta(self, endereco_retorno, mensagem):
@@ -307,14 +307,14 @@ class Model:
             sucesso = self.enviar_mensagem(host, porta, mensagem)
             
             if sucesso:
-                print(f"🔴 Resposta enviada para {endereco_retorno}")
+                print(Color.RED.value + f" Resposta enviada para {endereco_retorno}")
             else:
-                print(f"🔴 ❌ Falha ao enviar resposta para {endereco_retorno}")
+                print(Color.RED.value + f"❌ Falha ao enviar resposta para {endereco_retorno}")
                 
             return sucesso
             
         except Exception as e:
-            print(f"🔴 ❌ Erro ao processar endereço de retorno: {e}")
+            print(Color.RED.value + f"❌ Erro ao processar endereço de retorno: {e}")
             return False
     
     def enviar_mensagem(self, host, porta, mensagem):
@@ -327,12 +327,12 @@ class Model:
                 s.connect((host, porta))
                 s.send(mensagem_json.encode())
                 
-            print(f"🔴 Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
+            print(Color.RED.value + f" Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:
-            print(f"🔴 ❌ Conexão recusada para {host}:{porta}")
+            print(Color.RED.value + f"❌ Conexão recusada para {host}:{porta}")
             return False
         except Exception as e:
-            print(f"🔴 ❌ Erro ao enviar mensagem: {e}")
+            print(Color.RED.value + f"❌ Erro ao enviar mensagem: {e}")
             return False

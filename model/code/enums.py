@@ -1,5 +1,8 @@
 from enum import Enum
 
+class Color(Enum):
+    RED = '\033[31m[MODELO]\033[0m'
+
 class Address(Enum):
     HOST = '0.0.0.0'
     PORT = 8002

@@ -6,14 +6,14 @@ import subprocess
 
 import psycopg2
 
-from enums import Address, PostgesData, SnarkPath
+from enums import Address, Color, PostgesData, SnarkPath
 
 
 class Server:
     def __init__(self):
 
         print("\n" + "=" * 60)
-        print("🔵 INICIALIZANDO SERVIDOR")
+        print(Color.BLUE.value + " INICIALIZANDO SERVIDOR")
         print("=" * 60)
 
         # Configurações de rede
@@ -40,12 +40,12 @@ class Server:
     def inicializar_banco_dados(self):
         """Inicializa tabelas do banco de dados PostgreSQL"""
         try:
-            print("🔵 Conectando ao banco de dados PostgreSQL...")
+            print(Color.BLUE.value + " Conectando ao banco de dados PostgreSQL...")
             
             conn = psycopg2.connect(**self.config_banco)
             cursor = conn.cursor()
             
-            print("🔵 Criando tabelas se não existirem...")
+            print(Color.BLUE.value + " Criando tabelas se não existirem...")
             
             # Cria tabela para embeddings criptografadas
             cursor.execute("""
@@ -61,11 +61,11 @@ class Server:
             cursor.close()
             conn.close()
             
-            print("🔵 Banco de dados inicializado com sucesso")
+            print(Color.BLUE.value + " Banco de dados inicializado com sucesso")
             
         except Exception as e:
-            print(f"🔵 ❌ Erro ao inicializar banco de dados: {e}")
-            print("🔵 Tentando novamente em 5 segundos...")
+            print(Color.BLUE.value + f"❌ Erro ao inicializar banco de dados: {e}")
+            print(Color.BLUE.value + " Tentando novamente em 5 segundos...")
             time.sleep(5)
             self.inicializar_banco_dados()
     
@@ -77,10 +77,10 @@ class Server:
                 s.bind((self.host, self.port))
                 s.listen(5)
 
-                print(f"🔵 Servidor escutando em {self.host}:{self.port}")
+                print(Color.BLUE.value + f" Servidor escutando em {self.host}:{self.port}")
 
                 print("=" * 60)
-                print("🔵 SERVIDOR INICIALIZADO COM SUCESSO")
+                print(Color.BLUE.value + " SERVIDOR INICIALIZADO COM SUCESSO")
                 print("=" * 60 + "\n")
                 
                 while True:
@@ -90,12 +90,12 @@ class Server:
                         thread = threading.Thread(target=self.processar_cliente, args=(conn, addr))
                         thread.start()
                     except Exception as e:
-                        print(f"🔵 ❌ Erro no servidor: {e}")
+                        print(Color.BLUE.value + f"❌ Erro no servidor: {e}")
                         
         except KeyboardInterrupt:
-            print("\n🔵 Encerrando serviço do servidor...")
+            print("\n" + Color.BLUE.value + "Encerrando serviço do servidor...")
         except Exception as e:
-            print(f"🔵 ❌ Erro crítico no servidor: {e}")
+            print(Color.BLUE.value + f"❌ Erro crítico no servidor: {e}")
     
     def processar_cliente(self, conn, addr):
         """Processa mensagens recebidas de outros serviços"""
@@ -110,20 +110,20 @@ class Server:
                     dados_completos += chunk
                 
                 if dados_completos:
-                    print(f"🔵 Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
+                    print(Color.BLUE.value + f" Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
                     
                     # Converte dados recebidos para JSON
                     mensagem = json.loads(dados_completos.decode())
                     tipo_mensagem = mensagem.get('type', 'desconhecido')
-                    print(f"🔵 Tipo da mensagem: {tipo_mensagem}")
+                    print(Color.BLUE.value + f" Tipo da mensagem: {tipo_mensagem}")
                     
                     # Processa mensagem baseada no tipo
                     self.processar_mensagem(mensagem)
                         
         except json.JSONDecodeError as e:
-            print(f"🔵 ❌ Erro ao decodificar JSON: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao decodificar JSON: {e}")
         except Exception as e:
-            print(f"🔵 ❌ Erro ao processar cliente: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao processar cliente: {e}")
     
     def processar_mensagem(self, mensagem):
         """Roteia mensagens baseado no tipo"""
@@ -138,23 +138,23 @@ class Server:
         elif tipo_mensagem == 'verify_snark_proof':
             self.processar_verificacao_prova_snark(dados, endereco_retorno)
         else:
-            print(f"🔵 ⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
+            print(Color.BLUE.value + f"⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
     
     def processar_armazenamento_embedding(self, embedding_criptografada, endereco_retorno):
         """Processa solicitação de armazenamento de embedding (fase de registro)"""
         print("\n" + "=" * 60)
-        print("🔵 PROCESSANDO FASE DE REGISTRO")
+        print(Color.BLUE.value + " PROCESSANDO FASE DE REGISTRO")
         print("=" * 60)
-        print("🔵 Armazenando embedding criptografada...")
+        print(Color.BLUE.value + " Armazenando embedding criptografada...")
         
         # Armazena embedding no banco de dados
         embedding_id = self.armazenar_embedding(embedding_criptografada)
         
         if embedding_id:
-            print("🔵 Embedding armazenada com sucesso")
-            print(f"🔵 ID gerado: {embedding_id}")
+            print(Color.BLUE.value + " Embedding armazenada com sucesso")
+            print(Color.BLUE.value + f" ID gerado: {embedding_id}")
             print("=" * 60)
-            print("🔵 FASE DE REGISTRO CONCLUÍDA")
+            print(Color.BLUE.value + " FASE DE REGISTRO CONCLUÍDA")
             print("=" * 60 + "\n")
             
             # Envia ID de registro de volta para o usuário
@@ -163,9 +163,9 @@ class Server:
                 'data': embedding_id
             })
         else:
-            print("🔵 ❌ Falha ao armazenar embedding")
+            print(Color.BLUE.value + "❌ Falha ao armazenar embedding")
             print("=" * 60)
-            print("🔵 FASE DE REGISTRO FALHOU")
+            print(Color.BLUE.value + " FASE DE REGISTRO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -179,17 +179,17 @@ class Server:
     def processar_recuperacao_embedding(self, user_id, endereco_retorno):
         """Processa solicitação de recuperação de embedding (fase de autenticação)"""
         print("\n" + "=" * 60)
-        print("🔵 PROCESSANDO FASE DE AUTENTICAÇÃO - RECUPERAÇÃO")
+        print(Color.BLUE.value + " PROCESSANDO FASE DE AUTENTICAÇÃO - RECUPERAÇÃO")
         print("=" * 60)
-        print(f"🔵 Recuperando embedding para ID: {user_id}")
+        print(Color.BLUE.value + f" Recuperando embedding para ID: {user_id}")
         
         # Recupera embedding do banco de dados
         embedding_criptografada = self.recuperar_embedding(user_id)
         
         if embedding_criptografada:
-            print("🔵 Embedding recuperada com sucesso")
+            print(Color.BLUE.value + " Embedding recuperada com sucesso")
             print("=" * 60)
-            print("🔵 FASE DE RECUPERAÇÃO CONCLUÍDA")
+            print(Color.BLUE.value + " FASE DE RECUPERAÇÃO CONCLUÍDA")
             print("=" * 60 + "\n")
             
             # Envia embedding criptografada de volta para o usuário
@@ -198,9 +198,9 @@ class Server:
                 'data': embedding_criptografada
             })
         else:
-            print("🔵 ❌ Embedding não encontrada")
+            print(Color.BLUE.value + "❌ Embedding não encontrada")
             print("=" * 60)
-            print("🔵 FASE DE RECUPERAÇÃO FALHOU")
+            print(Color.BLUE.value + " FASE DE RECUPERAÇÃO FALHOU")
             print("=" * 60)
             
             # Envia erro de volta para o usuário
@@ -215,9 +215,9 @@ class Server:
     def processar_verificacao_prova_snark(self, dados_prova, endereco_retorno):
         """Processa solicitação de verificação de prova zk-SNARK (fase de autenticação)"""
         print("\n" + "=" * 60)
-        print("🔵 PROCESSANDO FASE DE AUTENTICAÇÃO - VERIFICAÇÃO")
+        print(Color.BLUE.value + " PROCESSANDO FASE DE AUTENTICAÇÃO - VERIFICAÇÃO")
         print("=" * 60)
-        print(f"🔵 Verificando prova zk-SNARK para usuário: {dados_prova.get('user_id')}")
+        print(Color.BLUE.value + f" Verificando prova zk-SNARK para usuário: {dados_prova.get('user_id')}")
         
         # Verifica prova zk-SNARK
         resultado = self.verificar_prova_snark(
@@ -228,12 +228,12 @@ class Server:
         
         if resultado.get('authenticated', False):
             print("=" * 60)
-            print("🔵 FASE DE AUTENTICAÇÃO CONCLUÍDA COM SUCESSO")
+            print(Color.BLUE.value + " FASE DE AUTENTICAÇÃO CONCLUÍDA COM SUCESSO")
             print("=" * 60)
         else:
-            print(f"🔵 Motivo: {resultado.get('reason', 'Não especificado')}")
+            print(Color.BLUE.value + f" Motivo: {resultado.get('reason', 'Não especificado')}")
             print("=" * 60)
-            print("🔵 AUTENTICAÇÃO FALHOU")
+            print(Color.BLUE.value + " AUTENTICAÇÃO FALHOU")
             print("=" * 60 + "\n")
         
         # Envia resultado de volta para o usuário
@@ -245,7 +245,7 @@ class Server:
     def armazenar_embedding(self, embedding_criptografada):
         """Armazena embedding criptografada no banco de dados e retorna ID único"""
         try:
-            print("🔵 Conectando ao banco de dados para armazenamento...")
+            print(Color.BLUE.value + " Conectando ao banco de dados para armazenamento...")
             
             conn = psycopg2.connect(**self.config_banco)
             cursor = conn.cursor()
@@ -265,17 +265,17 @@ class Server:
             cursor.close()
             conn.close()
             
-            print(f"🔵 Embedding armazenada no banco com ID: {embedding_id}")
+            print(Color.BLUE.value + f" Embedding armazenada no banco com ID: {embedding_id}")
             return str(embedding_id)
             
         except Exception as e:
-            print(f"🔵 ❌ Erro ao armazenar embedding no banco: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao armazenar embedding no banco: {e}")
             return None
     
     def recuperar_embedding(self, embedding_id):
         """Recupera embedding criptografada do banco de dados pelo ID"""
         try:
-            print(f"🔵 Conectando ao banco de dados para recuperação do ID: {embedding_id}")
+            print(Color.BLUE.value + f" Conectando ao banco de dados para recuperação do ID: {embedding_id}")
             
             conn = psycopg2.connect(**self.config_banco)
             cursor = conn.cursor()
@@ -295,37 +295,37 @@ class Server:
                     'data': resultado[0],
                     'iv': resultado[1]
                 }
-                print(f"🔵 Embedding recuperada do banco para ID: {embedding_id}")
+                print(Color.BLUE.value + f" Embedding recuperada do banco para ID: {embedding_id}")
                 return embedding_criptografada
             else:
-                print(f"🔵 ❌ Nenhuma embedding encontrada para ID: {embedding_id}")
+                print(Color.BLUE.value + f"❌ Nenhuma embedding encontrada para ID: {embedding_id}")
                 return None
                 
         except Exception as e:
-            print(f"🔵 ❌ Erro ao recuperar embedding do banco: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao recuperar embedding do banco: {e}")
             return None
     
     def verificar_prova_snark(self, prova, chave_verificacao, parametros_publicos):
         """Verifica a validade da prova zk-SNARK recebida"""
         try:
-            print("🔵 Iniciando processo de verificação da prova zk-SNARK...")
+            print(Color.BLUE.value + " Iniciando processo de verificação da prova zk-SNARK...")
             
             # Verifica se todos os dados necessários estão presentes
             if not all([prova, chave_verificacao, parametros_publicos]):
-                print("🔵 ❌ Dados da prova SNARK inválidos ou incompletos")
+                print(Color.BLUE.value + "❌ Dados da prova SNARK inválidos ou incompletos")
                 return {
                     'authenticated': False,
                     'reason': 'Dados da prova SNARK inválidos ou incompletos'
                 }
 
-            print("🔵 Salvando arquivos da prova zk-SNARK...")
+            print(Color.BLUE.value + " Salvando arquivos da prova zk-SNARK...")
             
             # Salva os dados da prova em arquivos JSON para verificação
             self.escrever_arquivo_json(SnarkPath.PROOF.value, prova)
             self.escrever_arquivo_json(SnarkPath.VERIFICATION_KEY.value, chave_verificacao)
             self.escrever_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value, parametros_publicos)
 
-            print("🔵 Executando script de verificação zk-SNARK...")
+            print(Color.BLUE.value + " Executando script de verificação zk-SNARK...")
             
             # Executa o script de verificação SNARK
             resultado = subprocess.run(
@@ -335,22 +335,22 @@ class Server:
                 shell=True
             )
             
-            print(f"🔵 Script executado - Código de retorno: {resultado.returncode}")
+            print(Color.BLUE.value + f" Script executado - Código de retorno: {resultado.returncode}")
             
             # Analisa resultado da verificação
             if resultado.returncode == 0 and 'OK!' in resultado.stdout:
-                print("🔵 ✅ Prova zk-SNARK válida - Autenticação aprovada")
+                print(Color.BLUE.value + " ✅ Prova zk-SNARK válida - Autenticação aprovada")
                 return {
                     'authenticated': True,
                     'timestamp': time.time(),
                     'verification_method': 'zk-SNARK'
                 }
             else:
-                print("🔵 ❌ Prova zk-SNARK inválida - Autenticação rejeitada")
+                print(Color.BLUE.value + "❌ Prova zk-SNARK inválida - Autenticação rejeitada")
                 if resultado.stdout:
-                    print("\n" + f"🔵 Saída do script: {resultado.stdout}")
+                    print("\n" + Color.BLUE.value + f" Saída do script: {resultado.stdout}")
                 if resultado.stderr:
-                    print(f"🔵 Erro do script: {resultado.stderr}")
+                    print(Color.BLUE.value + f" Erro do script: {resultado.stderr}")
                     
                 return {
                     'authenticated': False,
@@ -359,7 +359,7 @@ class Server:
                 }
                 
         except Exception as e:
-            print(f"🔵 ❌ Erro durante verificação da prova zk-SNARK: {e}")
+            print(Color.BLUE.value + f"❌ Erro durante verificação da prova zk-SNARK: {e}")
             return {
                 'authenticated': False,
                 'reason': f'Erro na verificação: {str(e)}'
@@ -370,9 +370,9 @@ class Server:
         try:
             with open(caminho_arquivo, 'w') as arquivo:
                 json.dump(conteudo, arquivo, indent=2)
-            print(f"🔵 Arquivo salvo: {caminho_arquivo}")
+            print(Color.BLUE.value + f" Arquivo salvo: {caminho_arquivo}")
         except Exception as e:
-            print(f"🔵 ❌ Erro ao escrever arquivo {caminho_arquivo}: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao escrever arquivo {caminho_arquivo}: {e}")
             raise e
     
     def enviar_resposta(self, endereco_retorno, mensagem):
@@ -386,14 +386,14 @@ class Server:
             sucesso = self.enviar_mensagem(host, porta, mensagem)
             
             if sucesso:
-                print(f"🔵 Resposta enviada para {endereco_retorno}")
+                print(Color.BLUE.value + f" Resposta enviada para {endereco_retorno}")
             else:
-                print(f"🔵 ❌ Falha ao enviar resposta para {endereco_retorno}")
+                print(Color.BLUE.value + f"❌ Falha ao enviar resposta para {endereco_retorno}")
                 
             return sucesso
             
         except Exception as e:
-            print(f"🔵 ❌ Erro ao processar endereço de retorno: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao processar endereço de retorno: {e}")
             return False
     
     def enviar_mensagem(self, host, porta, mensagem):
@@ -406,12 +406,12 @@ class Server:
                 s.connect((host, porta))
                 s.send(mensagem_json.encode())
                 
-            print(f"🔵 Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
+            print(Color.BLUE.value + f" Mensagem enviada para {host}:{porta} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:
-            print(f"🔵 ❌ Conexão recusada para {host}:{porta}")
+            print(Color.BLUE.value + f"❌ Conexão recusada para {host}:{porta}")
             return False
         except Exception as e:
-            print(f"🔵 ❌ Erro ao enviar mensagem: {e}")
+            print(Color.BLUE.value + f"❌ Erro ao enviar mensagem: {e}")
             return False

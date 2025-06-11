@@ -10,14 +10,14 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 
 from PIL import Image
-from enums import Addresses, ImagePath
+from enums import Addresses, Color, ImagePath
 
 
 class User:
     def __init__(self):
 
         print("\n" + "=" * 60)
-        print("🟢 INICIALIZANDO USUÁRIO")
+        print(Color.GREEN.value + " INICIALIZANDO USUÁRIO")
         print("=" * 60)
 
         # Chave simétrica para criptografia
@@ -41,10 +41,10 @@ class User:
         servidor_thread = threading.Thread(target=self.iniciar_servidor)
         servidor_thread.daemon = True
         servidor_thread.start()
-        print("🟢 Servidor de escuta iniciado em thread separada")
+        print(Color.GREEN.value + " Servidor de escuta iniciado em thread separada")
         
         # Aguarda um momento para outros serviços iniciarem
-        print("🟢 Aguardando outros serviços iniciarem...")
+        print(Color.GREEN.value + " Aguardando outros serviços iniciarem...")
         time.sleep(5)
         
         # Inicia processo de registro
@@ -55,7 +55,7 @@ class User:
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\n🟢 Encerrando serviço do usuário...")
+            print("\n" + Color.GREEN.value + " Encerrando serviço do usuário...")
     
     def iniciar_servidor(self):
         """Inicia servidor TCP para receber mensagens de outros serviços"""
@@ -65,10 +65,10 @@ class User:
                 s.bind((self.host, self.port))
                 s.listen(5)
 
-                print(f"🟢 Servidor escutando em {self.host}:{self.port}")
+                print(Color.GREEN.value + f" Servidor escutando em {self.host}:{self.port}")
 
                 print("=" * 60)
-                print("🟢 USUÁRIO INICIALIZADO COM SUCESSO")
+                print(Color.GREEN.value + " USUÁRIO INICIALIZADO COM SUCESSO")
                 print("=" * 60)
                 
                 while True:
@@ -78,9 +78,9 @@ class User:
                         thread = threading.Thread(target=self.processar_cliente, args=(conn, addr))
                         thread.start()
                     except Exception as e:
-                        print(f"🟢 ❌ Erro no servidor: {e}")
+                        print(Color.GREEN.value + f"❌ Erro no servidor: {e}")
         except Exception as e:
-            print(f"🟢 ❌ Erro crítico no servidor: {e}")
+            print(Color.GREEN.value + f"❌ Erro crítico no servidor: {e}")
     
     def processar_cliente(self, conn, addr):
         """Processa mensagens recebidas de outros serviços"""
@@ -95,19 +95,19 @@ class User:
                     dados_completos += chunk
                 
                 if dados_completos:
-                    print(f"🟢 Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
+                    print(Color.GREEN.value + f" Mensagem recebida de {addr} - Tamanho: {len(dados_completos)} bytes")
                     
                     # Converte dados recebidos para JSON
                     mensagem = json.loads(dados_completos.decode())
-                    print(f"🟢 Tipo da mensagem: {mensagem.get('type', 'desconhecido')}")
+                    print(Color.GREEN.value + f" Tipo da mensagem: {mensagem.get('type', 'desconhecido')}")
                     
                     # Processa mensagem baseada no tipo
                     self.processar_mensagem(mensagem)
                         
         except json.JSONDecodeError as e:
-            print(f"🟢 ❌ Erro ao decodificar JSON: {e}")
+            print(Color.GREEN.value + f"❌ Erro ao decodificar JSON: {e}")
         except Exception as e:
-            print(f"🟢 ❌ Erro ao processar cliente: {e}")
+            print(Color.GREEN.value + f"❌ Erro ao processar cliente: {e}")
     
     def processar_mensagem(self, mensagem):
         """Roteia mensagens baseado no tipo"""
@@ -125,13 +125,13 @@ class User:
         elif tipo_mensagem == 'authentication_result':
             self.processar_resultado_autenticacao(dados)
         else:
-            print(f"🟢 ⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
+            print(Color.GREEN.value + f"⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
     
     def gerar_chave_simetrica(self):
         """Gera chave simétrica AES de 256 bits para criptografia"""
-        print("🟢 Gerando chave simétrica AES-256...")
+        print(Color.GREEN.value + " Gerando chave simétrica AES-256...")
         self.chave_simetrica = get_random_bytes(32)  # 256 bits = 32 bytes
-        print("🟢 Chave simétrica gerada com sucesso")
+        print(Color.GREEN.value + " Chave simétrica gerada com sucesso")
         return self.chave_simetrica
     
     def criptografar_embedding(self, embedding):
@@ -139,7 +139,7 @@ class User:
         if not self.chave_simetrica:
             raise ValueError("❌ Chave simétrica não foi gerada")
         
-        print("🟢 Criptografando embedding...")
+        print(Color.GREEN.value + " Criptografando embedding...")
         
         # Converte embedding para formato serializável
         if isinstance(embedding, list):
@@ -161,7 +161,7 @@ class User:
             'iv': base64.b64encode(cipher.iv).decode('utf-8')
         }
         
-        print("🟢 Embedding criptografada com sucesso")
+        print(Color.GREEN.value + " Embedding criptografada com sucesso")
         return pacote_criptografado
     
     def descriptografar_embedding(self, pacote_criptografado):
@@ -169,7 +169,7 @@ class User:
         if not self.chave_simetrica:
             raise ValueError("❌ Chave simétrica não foi gerada")
         
-        print("🟢 Descriptografando embedding...")
+        print(Color.GREEN.value + " Descriptografando embedding...")
         
         # Extrai dados criptografados e IV do pacote
         dados_criptografados = base64.b64decode(pacote_criptografado['data'])
@@ -184,7 +184,7 @@ class User:
         
         # Converte de volta para embedding
         embedding = json.loads(dados_sem_padding.decode('utf-8'))
-        print("🟢 Embedding descriptografada com sucesso")
+        print(Color.GREEN.value + " Embedding descriptografada com sucesso")
         return embedding
     
     def enviar_mensagem(self, host, port, mensagem):
@@ -197,20 +197,20 @@ class User:
                 s.connect((host, port))
                 s.send(mensagem_json.encode())
                 
-            print(f"🟢 Mensagem enviada para {host}:{port} - Tamanho: {tamanho_mensagem} bytes")
+            print(Color.GREEN.value + f" Mensagem enviada para {host}:{port} - Tamanho: {tamanho_mensagem} bytes")
             return True
             
         except ConnectionRefusedError:
-            print(f"🟢 ❌ Conexão recusada para {host}:{port}")
+            print(Color.GREEN.value + f"❌ Conexão recusada para {host}:{port}")
             return False
         except Exception as e:
-            print(f"🟢 ❌ Erro ao enviar mensagem: {e}")
+            print(Color.GREEN.value + f"❌ Erro ao enviar mensagem: {e}")
             return False
     
     def carregar_imagem_como_base64(self, caminho_imagem):
         """Carrega imagem e converte para base64"""
         try:
-            print(f"🟢 Carregando imagem: {caminho_imagem}")
+            print(Color.GREEN.value + f" Carregando imagem: {caminho_imagem}")
             imagem = Image.open(caminho_imagem)
             
             # Converte para base64
@@ -218,11 +218,11 @@ class User:
             imagem.save(buffer, format='JPEG')
             imagem_base64 = base64.b64encode(buffer.getvalue()).decode()
             
-            print(f"🟢 Imagem carregada - Tamanho: {len(imagem_base64)} caracteres")
+            print(Color.GREEN.value + f" Imagem carregada - Tamanho: {len(imagem_base64)} caracteres")
             return imagem_base64
             
         except Exception as e:
-            print(f"🟢 ❌ Erro ao carregar imagem: {e}")
+            print(Color.GREEN.value + f"❌ Erro ao carregar imagem: {e}")
             return None
     
     # === PROCESSO DE REGISTRO ===
@@ -230,23 +230,23 @@ class User:
     def processo_registro(self):
         """Executa o processo completo de registro do usuário"""
         print("\n" + "=" * 60)
-        print("🟢 INICIANDO FASE DE REGISTRO")
+        print(Color.GREEN.value + " INICIANDO FASE DE REGISTRO")
         print("=" * 60)
         
         # Etapa 1: Gerar chave simétrica
-        print("🟢 Etapa 1/4: Gerando chave de criptografia")
+        print(Color.GREEN.value + " Etapa 1/4: Gerando chave de criptografia")
         self.gerar_chave_simetrica()
         
         # Etapa 2: Carregar foto do usuário
-        print("\n🟢 Etapa 2/4: Carregando foto do usuário")
+        print("\n" + Color.GREEN.value + " Etapa 2/4: Carregando foto do usuário")
         foto_base64 = self.carregar_imagem_como_base64(ImagePath.FACE_IMAGE_REG.value)
         
         if not foto_base64:
-            print("🟢 ❌ Falha no registro: Não foi possível carregar a foto")
+            print(Color.GREEN.value + "❌ Falha no registro: Não foi possível carregar a foto")
             return
         
         # Etapa 3: Solicitar embedding ao modelo de IA
-        print("\n🟢 Etapa 3/4: Enviando foto para o modelo de IA")
+        print("\n" + Color.GREEN.value + " Etapa 3/4: Enviando foto para o modelo de IA")
         mensagem_modelo = {
             'type': 'generate_embedding',
             'data': foto_base64,
@@ -255,31 +255,31 @@ class User:
         
         sucesso = self.enviar_mensagem(self.modelo_host, self.modelo_port, mensagem_modelo)
         if not sucesso:
-            print("🟢 ❌ Falha no registro: Não foi possível enviar foto para o modelo")
+            print(Color.GREEN.value + "❌ Falha no registro: Não foi possível enviar foto para o modelo")
             return
         
-        print("🟢 Aguardando resposta do modelo de IA...")
+        print(Color.GREEN.value + " Aguardando resposta do modelo de IA...")
     
     def processar_embedding_recebida(self, embedding):
         """Processa embedding recebida do modelo de IA durante o registro"""
-        print("\n🟢 Etapa 4/4: Processando embedding recebida")
+        print("\n" + Color.GREEN.value + " Etapa 4/4: Processando embedding recebida")
         
         # Verifica se embedding é válida
         if embedding is None:
-            print("🟢 ❌ Falha no registro: Embedding inválida recebida do modelo")
+            print(Color.GREEN.value + "❌ Falha no registro: Embedding inválida recebida do modelo")
             return
         
-        print(f"🟢 Embedding recebida - Dimensões: {len(embedding) if isinstance(embedding, list) else 'formato desconhecido'}")
+        print(Color.GREEN.value + f" Embedding recebida - Dimensões: {len(embedding) if isinstance(embedding, list) else 'formato desconhecido'}")
         
         # Criptografa embedding
         try:
             embedding_criptografada = self.criptografar_embedding(embedding)
         except Exception as e:
-            print(f"🟢 ❌ Falha no registro: Erro na criptografia - {e}")
+            print(Color.GREEN.value + f"❌ Falha no registro: Erro na criptografia - {e}")
             return
         
         # Envia embedding criptografada para servidor
-        print("🟢 Enviando embedding criptografada para servidor...")
+        print(Color.GREEN.value + " Enviando embedding criptografada para servidor...")
         mensagem_servidor = {
             'type': 'store_embedding',
             'data': embedding_criptografada,
@@ -288,13 +288,13 @@ class User:
         
         sucesso = self.enviar_mensagem(self.servidor_host, self.servidor_port, mensagem_servidor)
         if not sucesso:
-            print("🟢 ❌ Falha no registro: Não foi possível enviar para o servidor")
+            print(Color.GREEN.value + "❌ Falha no registro: Não foi possível enviar para o servidor")
     
     def processar_id_registro(self, registration_id):
         """Processa ID de registro recebido do servidor"""
-        print(f"🟢 ID do usuário: {registration_id}")
+        print(Color.GREEN.value + f" ID do usuário: {registration_id}")
         print("=" * 60)
-        print("🟢 FASE DE REGISTRO FINALIZADA")
+        print(Color.GREEN.value + " FASE DE REGISTRO FINALIZADA")
         print("=" * 60)
         
         # Armazena ID para futuras autenticações
@@ -309,16 +309,16 @@ class User:
     def processo_autenticacao(self):
         """Executa o processo completo de autenticação do usuário"""
         print("\n" + "=" * 60)
-        print("🟢 INICIANDO FASE DE AUTENTICAÇÃO")
+        print(Color.GREEN.value + " INICIANDO FASE DE AUTENTICAÇÃO")
         print("=" * 60)
         
         if not self.user_id:
-            print("🟢 ❌ Falha na autenticação: ID do usuário não encontrado")
-            print("🟢 É necessário fazer o registro primeiro")
+            print(Color.GREEN.value + "❌ Falha na autenticação: ID do usuário não encontrado")
+            print(Color.GREEN.value + " É necessário fazer o registro primeiro")
             return
         
         # Etapa 1: Solicitar embedding armazenada do servidor
-        print(f"🟢 Etapa 1/4: Solicitando embedding para ID {self.user_id}")
+        print(Color.GREEN.value + f" Etapa 1/4: Solicitando embedding para ID {self.user_id}")
         mensagem_servidor = {
             'type': 'get_embedding',
             'data': self.user_id,
@@ -327,33 +327,33 @@ class User:
         
         sucesso = self.enviar_mensagem(self.servidor_host, self.servidor_port, mensagem_servidor)
         if not sucesso:
-            print("🟢 ❌ Falha na autenticação: Não foi possível contatar o servidor")
+            print(Color.GREEN.value + "❌ Falha na autenticação: Não foi possível contatar o servidor")
             return
         
-        print("🟢 Aguardando embedding do servidor...")
+        print(Color.GREEN.value + " Aguardando embedding do servidor...")
     
     def processar_embedding_criptografada(self, embedding_criptografada):
         """Processa embedding criptografada recebida do servidor"""
-        print("\n🟢 Etapa 2/4: Processando embedding do servidor")
+        print("\n" + Color.GREEN.value + " Etapa 2/4: Processando embedding do servidor")
         
         # Descriptografa embedding armazenada
         try:
             embedding_antiga = self.descriptografar_embedding(embedding_criptografada)
-            print(f"🟢 Embedding descriptografada - Dimensões: {len(embedding_antiga) if isinstance(embedding_antiga, list) else 'formato desconhecido'}")
+            print(Color.GREEN.value + f" Embedding descriptografada - Dimensões: {len(embedding_antiga) if isinstance(embedding_antiga, list) else 'formato desconhecido'}")
         except Exception as e:
-            print(f"🟢 ❌ Falha na autenticação: Erro na descriptografia - {e}")
+            print(Color.GREEN.value + f"❌ Falha na autenticação: Erro na descriptografia - {e}")
             return
         
         # Carrega nova foto para autenticação
-        print("\n🟢 Etapa 3/4: Carregando foto para autenticação")
+        print("\n" + Color.GREEN.value + " Etapa 3/4: Carregando foto para autenticação")
         foto_nova_base64 = self.carregar_imagem_como_base64(ImagePath.FACE_IMAGE_AUT.value)
         
         if not foto_nova_base64:
-            print("🟢 ❌ Falha na autenticação: Não foi possível carregar foto de autenticação")
+            print(Color.GREEN.value + "❌ Falha na autenticação: Não foi possível carregar foto de autenticação")
             return
         
         # Solicita prova zk-SNARK ao modelo
-        print("🟢 Enviando dados para geração de prova zk-SNARK...")
+        print(Color.GREEN.value + " Enviando dados para geração de prova zk-SNARK...")
         mensagem_modelo = {
             'type': 'generate_snark_proof',
             'data': {
@@ -365,20 +365,20 @@ class User:
         
         sucesso = self.enviar_mensagem(self.modelo_host, self.modelo_port, mensagem_modelo)
         if not sucesso:
-            print("🟢 ❌ Falha na autenticação: Não foi possível enviar dados para o modelo")
+            print(Color.GREEN.value + "❌ Falha na autenticação: Não foi possível enviar dados para o modelo")
     
     def processar_prova_snark(self, dados_prova):
         """Processa prova zk-SNARK recebida do modelo"""
-        print("\n🟢 Etapa 4/4: Processando prova zk-SNARK")
-        print("🟢 Prova zk-SNARK recebida do modelo")
+        print("\n" + Color.GREEN.value + " Etapa 4/4: Processando prova zk-SNARK")
+        print(Color.GREEN.value + " Prova zk-SNARK recebida do modelo")
         
         # Verifica se prova contém dados necessários
         if not all(key in dados_prova for key in ['prova', 'chave', 'params']):
-            print("🟢 ❌ Falha na autenticação: Prova zk-SNARK incompleta")
+            print(Color.GREEN.value + "❌ Falha na autenticação: Prova zk-SNARK incompleta")
             return
         
         # Envia prova para o servidor verificar
-        print("🟢 Enviando prova para verificação no servidor...")
+        print(Color.GREEN.value + " Enviando prova para verificação no servidor...")
         mensagem_servidor = {
             'type': 'verify_snark_proof',
             'data': {
@@ -392,22 +392,22 @@ class User:
         
         sucesso = self.enviar_mensagem(self.servidor_host, self.servidor_port, mensagem_servidor)
         if not sucesso:
-            print("🟢 ❌ Falha na autenticação: Não foi possível enviar prova para o servidor")
+            print(Color.GREEN.value + "❌ Falha na autenticação: Não foi possível enviar prova para o servidor")
     
     def processar_resultado_autenticacao(self, resultado):
         """Processa resultado final da autenticação"""
-        print(f"\n🟢 RESULTADO DA AUTENTICAÇÃO:")
+        print(f"\n" + Color.GREEN.value + " RESULTADO DA AUTENTICAÇÃO:")
         
         if resultado.get('authenticated', False):
-            print("🟢 ✅ AUTENTICAÇÃO BEM-SUCEDIDA!")
-            print(f"🟢 Usuário autenticado com sucesso")
+            print(Color.GREEN.value + " ✅ AUTENTICAÇÃO BEM-SUCEDIDA!")
+            print(Color.GREEN.value + f" Usuário autenticado com sucesso")
             if 'timestamp' in resultado:
-                print(f"🟢 Timestamp: {resultado['timestamp']}")
+                print(Color.GREEN.value + f" Timestamp: {resultado['timestamp']}")
         else:
-            print("🟢 ❌ AUTENTICAÇÃO FALHOU!")
+            print(Color.GREEN.value + "❌ AUTENTICAÇÃO FALHOU!")
             motivo = resultado.get('reason', 'Motivo não especificado')
-            print(f"🟢 Motivo da falha: {motivo}")
+            print(Color.GREEN.value + f" Motivo da falha: {motivo}")
         
         print("=" * 60)
-        print("🟢 FASE DE AUTENTICAÇÃO FINALIZADA")
+        print(Color.GREEN.value + " FASE DE AUTENTICAÇÃO FINALIZADA")
         print("=" * 60 + "\n")
