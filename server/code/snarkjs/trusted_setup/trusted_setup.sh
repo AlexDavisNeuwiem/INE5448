@@ -2,7 +2,7 @@
 
 INPUT_DIR=input
 OUTPUT_DIR=outputs
-SNARKJS_DIR=/home/model/snarkjs/trusted_setup/
+SNARKJS_DIR=/home/server/snarkjs/trusted_setup/
 
 CIRCUIT=cosine_similarity
 

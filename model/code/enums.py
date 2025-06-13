@@ -15,16 +15,19 @@ class Adjustments(Enum):
     SCALE = 100_000_000_000_000_000
 
 class SnarkPath(Enum):
-    TRUSTED_SETUP_DIR = '/home/model/snarkjs/trusted_setup/'
-
+    # === DIRETÓRIOS === #
     PROOF_GENERATION_DIR = '/home/model/snarkjs/proof_generation/'
+    PROOF_GENERATION_INPUTS = PROOF_GENERATION_DIR + 'inputs/'
+    PROOF_GENERATION_OUTPUTS = PROOF_GENERATION_DIR + 'outputs/'
 
-    SCRIPT = '/bin/bash /home/model/snarkjs/snarkjs.sh'
+    # === ENTRADAS === #
+    WITNESS =  PROOF_GENERATION_INPUTS + 'input.json'
+    PROVING_KEY = PROOF_GENERATION_INPUTS + 'proving_key.zkey'
+    CIRCUIT = PROOF_GENERATION_INPUTS + 'circuit.wasm'
 
-    WITNESS =  PROOF_GENERATION_DIR + 'inputs/input.json'
+    #  === SCRIPT === #
+    GENERATE_PROOF_SCRIPT = '/bin/bash ' + PROOF_GENERATION_DIR + 'generate_proof.sh'
 
-    VERIFICATION_KEY = TRUSTED_SETUP_DIR + 'outputs/verification_key.json'
-
-    PROOF = PROOF_GENERATION_DIR + 'outputs/proof.json'
-
-    PUBLIC_PARAMETERS= PROOF_GENERATION_DIR + 'outputs/public_parameters.json'
+    # === SAIDAS === #
+    PROOF = PROOF_GENERATION_OUTPUTS + 'proof.json'
+    PUBLIC_PARAMETERS= PROOF_GENERATION_OUTPUTS + 'public_parameters.json'

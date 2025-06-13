@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SNARKJS_DIR=/home/server/snarkjs/inputs/
+SNARKJS_DIR=/home/server/snarkjs/proof_verification/inputs/
 
 set -e  # Interrompe no primeiro erro
 set -x  # Mostra todos os comandos executados

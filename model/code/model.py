@@ -148,7 +148,9 @@ class Model:
             # Envia erro de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
                 'type': 'embedding_error',
-                'data': None
+                'data': {
+                    'error': 'Falha ao gerar embedding'
+                }
             })
     
     def processar_solicitacao_prova_snark(self, dados, endereco_retorno):
@@ -171,8 +173,7 @@ class Model:
                 'type': 'snark_proof',
                 'data': {
                     'prova': dados_prova[0],
-                    'chave': dados_prova[1],
-                    'params': dados_prova[2]
+                    'params': dados_prova[1]
                 }
             })
         else:
@@ -230,8 +231,24 @@ class Model:
     def gerar_prova_snark(self, dados_mensagem):
         """Gera prova zk-SNARK para verificação de similaridade facial"""
         try:
-            foto_nova_base64 = dados_mensagem['foto_nova']
-            embedding_antiga = dados_mensagem['embedding_antiga']
+            foto_nova_base64 = dados_mensagem['new_image']
+            embedding_antiga = dados_mensagem['old_embedding']
+            proving_key_b64 = dados_mensagem['proving_key']
+            circuit_wasm_b64 = dados_mensagem['circuit']
+            
+            print(Color.RED.value + " Salvando arquivos do trusted setup recebidos...")
+            
+            # Salva a chave de prova (proving_key.zkey)
+            proving_key_data = base64.b64decode(proving_key_b64)
+            with open(SnarkPath.PROVING_KEY.value, 'wb') as f:
+                f.write(proving_key_data)
+            print(Color.RED.value + f" Chave de prova salva em: {SnarkPath.PROVING_KEY.value}")
+            
+            # Salva o circuit.wasm (decodifica de base64)
+            circuit_wasm_data = base64.b64decode(circuit_wasm_b64)
+            with open(SnarkPath.CIRCUIT.value, 'wb') as f:
+                f.write(circuit_wasm_data)
+            print(Color.RED.value + f" Circuit WASM salvo em: {SnarkPath.CIRCUIT.value}")
             
             print(Color.RED.value + " Gerando embedding da nova foto...")
             
@@ -258,7 +275,7 @@ class Model:
 
             # Executa o script de geração da prova zk-SNARK
             resultado = subprocess.run(
-                SnarkPath.SCRIPT.value,
+                SnarkPath.GENERATE_PROOF_SCRIPT.value,
                 capture_output=True,
                 text=True,
                 shell=True
@@ -272,15 +289,10 @@ class Model:
             
             # Carrega os arquivos gerados pelo script zk-SNARK
             prova = self.carregar_arquivo_json(SnarkPath.PROOF.value)
-            chave_verificacao = self.carregar_arquivo_json(SnarkPath.VERIFICATION_KEY.value)
             parametros_publicos = self.carregar_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value)
 
-            if not all([prova, chave_verificacao, parametros_publicos]):
-                print(Color.RED.value + "❌ Falha ao carregar arquivos da prova zk-SNARK")
-                return None
-
             print(Color.RED.value + " ✅ Prova zk-SNARK gerada com sucesso")
-            return (prova, chave_verificacao, parametros_publicos)
+            return (prova, parametros_publicos)
             
         except Exception as e:
             print(Color.RED.value + f"❌ Erro ao gerar prova zk-SNARK: {e}")

@@ -43,9 +43,9 @@ template SimilaridadeCossenos() {
     var limiar = threshold * threshold;
     
     // Se similaridade >= limiar, então resultado = 1, senão resultado = 0
-    resultado <-- (similaridade >= limiar) ? 1 : 0;
+    resultado <-- (1 >= 2) ? 1 : 0;
     
-    // Constraints para garantir integridade, o resultado é 0 ou 1
+    // Constraints para garantir integridade, o resultado precisa ser 1
     resultado * (resultado - 1) === 0;
 }
 

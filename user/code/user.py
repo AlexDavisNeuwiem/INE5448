@@ -118,14 +118,14 @@ class User:
             self.processar_embedding_recebida(dados)
         elif tipo_mensagem == 'registration_id':
             self.processar_id_registro(dados)
-        elif tipo_mensagem == 'encrypted_embedding':
-            self.processar_embedding_criptografada(dados)
+        elif tipo_mensagem == 'snark_ingredients':
+            self.processar_ingredientes_snark(dados)
         elif tipo_mensagem == 'snark_proof':
             self.processar_prova_snark(dados)
         elif tipo_mensagem == 'authentication_result':
             self.processar_resultado_autenticacao(dados)
         else:
-            print(Color.GREEN.value + f"⚠️ Tipo de mensagem desconhecido: {tipo_mensagem}")
+            self.processar_erro(dados)
     
     def gerar_chave_simetrica(self):
         """Gera chave simétrica AES de 256 bits para criptografia"""
@@ -332,10 +332,14 @@ class User:
         
         print(Color.GREEN.value + " Aguardando embedding do servidor...")
     
-    def processar_embedding_criptografada(self, embedding_criptografada):
+    def processar_ingredientes_snark(self, ingredientes):
         """Processa embedding criptografada recebida do servidor"""
         print("\n" + Color.GREEN.value + " Etapa 2/4: Processando embedding do servidor")
         
+        embedding_criptografada = ingredientes['embedding']
+        chave_prova = ingredientes['proving_key']
+        circuito = ingredientes['circuit']
+
         # Descriptografa embedding armazenada
         try:
             embedding_antiga = self.descriptografar_embedding(embedding_criptografada)
@@ -357,8 +361,10 @@ class User:
         mensagem_modelo = {
             'type': 'generate_snark_proof',
             'data': {
-                'foto_nova': foto_nova_base64,
-                'embedding_antiga': embedding_antiga,
+                'new_image': foto_nova_base64,
+                'old_embedding': embedding_antiga,
+                'proving_key': chave_prova,
+                'circuit': circuito
             },
             'return_to': Addresses.RETURN.value
         }
@@ -372,11 +378,6 @@ class User:
         print("\n" + Color.GREEN.value + " Etapa 4/4: Processando prova zk-SNARK")
         print(Color.GREEN.value + " Prova zk-SNARK recebida do modelo")
         
-        # Verifica se prova contém dados necessários
-        if not all(key in dados_prova for key in ['prova', 'chave', 'params']):
-            print(Color.GREEN.value + "❌ Falha na autenticação: Prova zk-SNARK incompleta")
-            return
-        
         # Envia prova para o servidor verificar
         print(Color.GREEN.value + " Enviando prova para verificação no servidor...")
         mensagem_servidor = {
@@ -384,7 +385,6 @@ class User:
             'data': {
                 'user_id': self.user_id,
                 'prova': dados_prova['prova'],
-                'chave': dados_prova['chave'],
                 'params': dados_prova['params']
             },
             'return_to': Addresses.RETURN.value
@@ -411,3 +411,6 @@ class User:
         print("=" * 60)
         print(Color.GREEN.value + " FASE DE AUTENTICAÇÃO FINALIZADA")
         print("=" * 60 + "\n")
+
+    def processar_erro(self, mensagem):
+        print(Color.GREEN.value + f"❌ Erro: {mensagem['error']}")

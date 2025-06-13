@@ -3,6 +3,7 @@ import json
 import socket
 import threading
 import subprocess
+import base64
 
 import psycopg2
 
@@ -30,9 +31,12 @@ class Server:
     
     def executar(self):
         """Método principal que inicia o serviço do servidor"""
-        
+
         # Inicializa banco de dados
         self.inicializar_banco_dados()
+
+        # Compila o circuito e gera as chaves de prova e de verificação
+        self.executar_trusted_setup()
         
         # Inicia servidor para receber mensagens
         self.iniciar_servidor()
@@ -57,6 +61,17 @@ class Server:
                 )
             """)
             
+            # Cria tabela para armazenar arquivos do trusted setup
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS trusted_setup_files (
+                    id SERIAL PRIMARY KEY,
+                    file_type VARCHAR(50) NOT NULL UNIQUE,
+                    file_content TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
             conn.commit()
             cursor.close()
             conn.close()
@@ -68,7 +83,120 @@ class Server:
             print(Color.BLUE.value + " Tentando novamente em 5 segundos...")
             time.sleep(5)
             self.inicializar_banco_dados()
-    
+
+    def executar_trusted_setup(self):
+        """Executa o script que realiza o trusted setup"""
+        print(Color.BLUE.value + " Executando trusted setup...")
+        
+        resultado = subprocess.run(
+            SnarkPath.TRUSTED_SETUP_SCRIPT.value, 
+            capture_output=True, 
+            text=True,
+            shell=True
+        )
+
+        print(Color.BLUE.value + f" Trusted Setup realizado - Código de retorno: {resultado.returncode}")
+            
+        # Analisa resultado da verificação
+        if resultado.returncode == 0:
+            print(Color.BLUE.value + " ✅ Trusted Setup realizado com sucesso")
+            
+            # Armazena os arquivos gerados no banco de dados
+            self.armazenar_arquivos_trusted_setup()
+            
+        else:
+            print(Color.BLUE.value + "❌ Trusted Setup falhou")
+            if resultado.stdout:
+                print("\n" + Color.BLUE.value + f" Saída do script: {resultado.stdout}")
+            if resultado.stderr:
+                print(Color.BLUE.value + f" Erro do script: {resultado.stderr}")
+                
+            raise Exception("Falha no trusted setup - não é possível continuar")
+
+    def armazenar_arquivos_trusted_setup(self):
+        """Armazena os arquivos do trusted setup no banco de dados"""
+        try:
+            print(Color.BLUE.value + " Armazenando arquivos do trusted setup no banco de dados...")
+            
+            conn = psycopg2.connect(**self.config_banco)
+            cursor = conn.cursor()
+            
+            # Lista de arquivos para armazenar
+            arquivos = [
+                ('verification_key', SnarkPath.VERIFICATION_KEY_OUTPUT.value),
+                ('proving_key', SnarkPath.PROVING_KEY.value),
+                ('circuit', SnarkPath.CIRCUIT.value)
+            ]
+            
+            for tipo_arquivo, caminho_arquivo in arquivos:
+                print(Color.BLUE.value + f" Lendo arquivo: {caminho_arquivo}")
+                
+                try:
+                    # Lê o conteúdo do arquivo
+                    if caminho_arquivo.endswith('.wasm') or caminho_arquivo.endswith('.zkey'):
+                        # Para arquivos binários (.wasm), codifica em base64
+                        with open(caminho_arquivo, 'rb') as arquivo:
+                            conteudo_binario = arquivo.read()
+                            conteudo = base64.b64encode(conteudo_binario).decode('utf-8')
+                    else:
+                        # Para arquivos JSON, lê como texto
+                        with open(caminho_arquivo, 'r') as arquivo:
+                            conteudo = arquivo.read()
+                    
+                    # Insere ou atualiza o arquivo no banco
+                    cursor.execute("""
+                        INSERT INTO trusted_setup_files (file_type, file_content)
+                        VALUES (%s, %s)
+                        ON CONFLICT (file_type) 
+                        DO UPDATE SET 
+                            file_content = EXCLUDED.file_content,
+                            updated_at = CURRENT_TIMESTAMP
+                    """, (tipo_arquivo, conteudo))
+                    
+                    print(Color.BLUE.value + f" ✅ Arquivo {tipo_arquivo} armazenado com sucesso")
+                    
+                except FileNotFoundError:
+                    print(Color.BLUE.value + f"❌ Arquivo não encontrado: {caminho_arquivo}")
+                    raise
+                except Exception as e:
+                    print(Color.BLUE.value + f"❌ Erro ao processar arquivo {caminho_arquivo}: {e}")
+                    raise
+            
+            conn.commit()
+            cursor.close()
+            conn.close()
+            
+            print(Color.BLUE.value + " ✅ Todos os arquivos do trusted setup foram armazenados")
+            
+        except Exception as e:
+            print(Color.BLUE.value + f"❌ Erro ao armazenar arquivos do trusted setup: {e}")
+            raise
+
+    def recuperar_arquivo_trusted_setup(self, tipo_arquivo):
+        """Recupera um arquivo do trusted setup do banco de dados"""
+        try:
+            conn = psycopg2.connect(**self.config_banco)
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                SELECT file_content FROM trusted_setup_files
+                WHERE file_type = %s
+            """, (tipo_arquivo,))
+            
+            resultado = cursor.fetchone()
+            cursor.close()
+            conn.close()
+            
+            if resultado:
+                return resultado[0]
+            else:
+                print(Color.BLUE.value + f"❌ Arquivo {tipo_arquivo} não encontrado no banco")
+                return None
+                
+        except Exception as e:
+            print(Color.BLUE.value + f"❌ Erro ao recuperar arquivo {tipo_arquivo}: {e}")
+            return None
+
     def iniciar_servidor(self):
         """Inicia servidor TCP para receber mensagens de outros serviços"""
         try:
@@ -188,15 +316,41 @@ class Server:
         
         if embedding_criptografada:
             print(Color.BLUE.value + " Embedding recuperada com sucesso")
-            print("=" * 60)
-            print(Color.BLUE.value + " FASE DE RECUPERAÇÃO CONCLUÍDA")
-            print("=" * 60 + "\n")
             
-            # Envia embedding criptografada de volta para o usuário
-            self.enviar_resposta(endereco_retorno, {
-                'type': 'encrypted_embedding',
-                'data': embedding_criptografada
-            })
+            # Recupera arquivos do trusted setup
+            print(Color.BLUE.value + " Recuperando arquivos do trusted setup...")
+            proving_key = self.recuperar_arquivo_trusted_setup('proving_key')
+            circuit = self.recuperar_arquivo_trusted_setup('circuit')
+            
+            if proving_key and circuit:
+                print(Color.BLUE.value + " Arquivos do trusted setup recuperados com sucesso")
+                print("=" * 60)
+                print(Color.BLUE.value + " FASE DE RECUPERAÇÃO CONCLUÍDA")
+                print("=" * 60 + "\n")
+                
+                # Envia embedding criptografada junto com os arquivos do trusted setup
+                self.enviar_resposta(endereco_retorno, {
+                    'type': 'snark_ingredients',
+                    'data': {
+                        'embedding': embedding_criptografada,
+                        'proving_key': proving_key,
+                        'circuit': circuit
+                    }
+                })
+            else:
+                print(Color.BLUE.value + "❌ Falha ao recuperar arquivos do trusted setup")
+                print("=" * 60)
+                print(Color.BLUE.value + " FASE DE RECUPERAÇÃO FALHOU")
+                print("=" * 60)
+                
+                # Envia erro de volta para o usuário
+                self.enviar_resposta(endereco_retorno, {
+                    'type': 'authentication_result',
+                    'data': {
+                        'authenticated': False,
+                        'reason': 'Falha ao recuperar arquivos do trusted setup'
+                    }
+                })
         else:
             print(Color.BLUE.value + "❌ Embedding não encontrada")
             print("=" * 60)
@@ -222,7 +376,6 @@ class Server:
         # Verifica prova zk-SNARK
         resultado = self.verificar_prova_snark(
             dados_prova['prova'], 
-            dados_prova['chave'], 
             dados_prova['params']
         )
         
@@ -305,37 +458,37 @@ class Server:
             print(Color.BLUE.value + f"❌ Erro ao recuperar embedding do banco: {e}")
             return None
     
-    def verificar_prova_snark(self, prova, chave_verificacao, parametros_publicos):
+    def verificar_prova_snark(self, prova, parametros_publicos):
         """Verifica a validade da prova zk-SNARK recebida"""
         try:
             print(Color.BLUE.value + " Iniciando processo de verificação da prova zk-SNARK...")
-            
-            # Verifica se todos os dados necessários estão presentes
-            if not all([prova, chave_verificacao, parametros_publicos]):
-                print(Color.BLUE.value + "❌ Dados da prova SNARK inválidos ou incompletos")
-                return {
-                    'authenticated': False,
-                    'reason': 'Dados da prova SNARK inválidos ou incompletos'
-                }
 
             print(Color.BLUE.value + " Salvando arquivos da prova zk-SNARK...")
             
             # Salva os dados da prova em arquivos JSON para verificação
             self.escrever_arquivo_json(SnarkPath.PROOF.value, prova)
-            self.escrever_arquivo_json(SnarkPath.VERIFICATION_KEY.value, chave_verificacao)
             self.escrever_arquivo_json(SnarkPath.PUBLIC_PARAMETERS.value, parametros_publicos)
+            
+            # Recupera e salva a chave de verificação do banco
+            verification_key = self.recuperar_arquivo_trusted_setup('verification_key')
+            if verification_key:
+                with open(SnarkPath.VERIFICATION_KEY_INPUT.value, 'w') as f:
+                    f.write(verification_key)
+                print(Color.BLUE.value + " Chave de verificação restaurada do banco")
+            else:
+                raise Exception("Chave de verificação não encontrada no banco")
 
             print(Color.BLUE.value + " Executando script de verificação zk-SNARK...")
             
             # Executa o script de verificação SNARK
             resultado = subprocess.run(
-                SnarkPath.SCRIPT.value, 
+                SnarkPath.VERIFY_PROOF_SCRIPT.value, 
                 capture_output=True, 
                 text=True,
                 shell=True
             )
             
-            print(Color.BLUE.value + f" Script executado - Código de retorno: {resultado.returncode}")
+            print(Color.BLUE.value + f" Prova verificada - Código de retorno: {resultado.returncode}")
             
             # Analisa resultado da verificação
             if resultado.returncode == 0 and 'OK!' in resultado.stdout:

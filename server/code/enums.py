@@ -14,12 +14,21 @@ class PostgesData(Enum):
     PASSWORD = '123456'
 
 class SnarkPath(Enum):
+    # === DIRETÓRIOS === #
     SNARKJS_DIR = '/home/server/snarkjs/'
+    TRUSTED_SETUP_OUTPUTS = SNARKJS_DIR + 'trusted_setup/outputs/'
+    PROOF_VERIFICATION_INPUTS = SNARKJS_DIR + 'proof_verification/inputs/'
 
-    SCRIPT = '/bin/bash ' + SNARKJS_DIR + 'verify_proof.sh'
+    # === TRUSTED SETUP === #
+    TRUSTED_SETUP_SCRIPT = '/bin/bash ' + SNARKJS_DIR + 'trusted_setup/trusted_setup.sh'
 
-    VERIFICATION_KEY = SNARKJS_DIR + 'inputs/verification_key.json'
+    VERIFICATION_KEY_OUTPUT = TRUSTED_SETUP_OUTPUTS + 'verification_key.json'
+    PROVING_KEY = TRUSTED_SETUP_OUTPUTS + 'cosine_similarity_final.zkey'
+    CIRCUIT = TRUSTED_SETUP_OUTPUTS + 'cosine_similarity.wasm'
 
-    PROOF = SNARKJS_DIR + 'inputs/proof.json'
+    # === PROOF VERIFICATION === #
+    PROOF = PROOF_VERIFICATION_INPUTS + 'proof.json'
+    PUBLIC_PARAMETERS= PROOF_VERIFICATION_INPUTS + 'public_parameters.json'
+    VERIFICATION_KEY_INPUT = PROOF_VERIFICATION_INPUTS + 'verification_key.json'
 
-    PUBLIC_PARAMETERS= SNARKJS_DIR + 'inputs/public_parameters.json'
+    VERIFY_PROOF_SCRIPT = '/bin/bash ' + SNARKJS_DIR + 'proof_verification/verify_proof.sh'

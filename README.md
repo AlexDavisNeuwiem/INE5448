@@ -1,26 +1,33 @@
 # Protocolo de Autenticação Multimodal com Zero-Knowledge Proofs
 
-Este projeto implementa um protocolo de registro biométrico seguro com três componentes isolados: Usuário, Servidor e Modelo de IA.
+Este projeto implementa um protocolo de autenticação biométrica segura com três componentes isolados: Usuário, Servidor e Modelo de IA.
 
 ## Arquitetura
 
 ### Principais Componentes:
 
-🔴 Modelo de IA
+<span style="color:white;background-color:red">
+- Modelo de IA -
+</span>
 
-Gera embeddings biométricas de 512 dimensões
-Simula processamento de reconhecimento facial
+- Gera embeddings biométricas de 512 dimensões por meio de reconhecimento facial
+- Gera as provas zk-SNARKs com base na similaridade das embeddings biométricas
 
-🟢 Usuário
+<span style="color:white;background-color:green">
+- Usuário -
+</span>
 
-Gera chaves simétricas AES-256
-Criptografa/descriptografa embeddings
-Solicita registro e autenticação
+- Gera chaves simétricas AES-256
+- Criptografa/descriptografa as embeddings biométricas
+- Solicita registro e autenticação
 
-🔵 Servidor
+<span style="color:white;background-color:blue">
+- Servidor -
+</span>
 
-Armazena embeddings criptografadas no banco de dados
-Retorna IDs únicos de registro
+- Armazena as embeddings criptografadas no banco de dados
+- Retorna IDs únicos de registro
+- Valida a autenticação por meio da verificação das provas zk-SNARKs
 
 ### Fluxo do Protocolo
 
@@ -45,38 +52,61 @@ TODO
     └── Dockerfile
 ```
 
-## Execução com Docker
+## Comandos Docker
 
-### Criando os contêineres
+### Criar os contêineres
     docker-compose up --build
 
-### Removendo os contêineres
+### Acompanhar logs específicos
+    docker-compose logs -f [NOME DO SERVIÇO]
+
+### Remover os contêineres
     docker-compose down
 
-### Executando um serviço específico
+### Executar um contêiner específico
     docker exec -it [NOME DO CONTÊINER] /bin/bash
 
-### Saindo do ambiente do serviço
+### Sair do ambiente do serviço
     exit
 
-## Make
 
-### Instalando as dependências
+## Comandos Make
+
+### Instalar as dependências
     make install
 
-### Executando um programa (INPUT é opcional)
+### Executar o programa (INPUT é opcional)
     make run INPUT=[ENTRADA]
+
+### Instalar as dependências e executar o programa em seguida
+    make
 
 ### Limpando os binários
     make clean
 
-## Para acompanhar logs específicos
 
+## Execução do projeto
+
+### 1. Na raiz do projeto, execute o comando de criação dos contêineres:
+    docker-compose up --build
+
+### 2. Em seguida, acesse cada contêiner separadamente:
 ```
-docker-compose logs -f [NOME DO SERVIÇO]
+docker exec -it model-container /bin/bash
+```
+```
+docker exec -it user-container /bin/bash
+```
+```
+docker exec -it server-container /bin/bash
 ```
 
-## Tecnologias
+### 3. Por fim, no terminal de cada serviço, rode o código de execução:
+    make
+\* Execute o código do Usuário apenas quando os demais serviços já estiverem rodando
+
+
+## Tecnologias utilizadas
 
 ### Bibliotecas Python
 
@@ -85,7 +115,7 @@ docker-compose logs -f [NOME DO SERVIÇO]
 - PyCryptodome: Criptografia AES
 - FaceNet-PyTorch: Processamento de imagens faciais
 
-## Outras ferramentas utilizadas
+### Outras ferramentas
 
 - Docker: Containerização
 - PostgreSQL: Banco de dados
