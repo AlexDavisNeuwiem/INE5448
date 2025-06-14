@@ -43,7 +43,7 @@ class Model:
         self.resnet = InceptionResnetV1(pretrained='vggface2').eval().to(self.device)
         
         # Limiar de similaridade para correspondência facial
-        self.limiar_similaridade = int(Adjustments.THRESHOLD.value * Adjustments.SCALE.value)
+        self.limiar_similaridade = Adjustments.THRESHOLD.value
 
     def executar(self):
         """Método principal que inicia o serviço do modelo"""

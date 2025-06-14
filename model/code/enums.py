@@ -10,7 +10,7 @@ class Address(Enum):
 class Adjustments(Enum):
     DIMENSIONS = 512
 
-    THRESHOLD = 0.7
+    THRESHOLD = 0.7 * 10 # Ajuste necessário, ver cosine_similarity.circom
 
     SCALE = 100_000_000_000_000_000
 
