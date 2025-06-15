@@ -25,7 +25,7 @@ RUN . "$CARGO_HOME/env" && \
     cd circom && \
     cargo build --release && \
     cargo install --path circom && \
-    cd ..
+    cd ../
 
 # Instalando nvm e snarkjs
 ENV NVM_DIR=/root/.nvm
@@ -39,5 +39,10 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | b
 # Adiciona Node.js ao PATH (para futuros comandos e shells)
 ENV NODE_PATH=$NVM_DIR/versions/node/v22.*/lib/node_modules
 ENV PATH=$NVM_DIR/versions/node/v22.*/bin:$PATH
+
+# Instalando as bibliotecas circom
+RUN mkdir /home/circom-libraries/ && \
+    cd /home/circom-libraries/ && \
+    git clone https://github.com/iden3/circomlib.git
 
 WORKDIR /home/server/

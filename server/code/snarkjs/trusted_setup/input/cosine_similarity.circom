@@ -1,9 +1,11 @@
 pragma circom 2.0.0;
 
+include "/home/circom-libraries/circomlib/circuits/comparators.circom";
+
 // Template para o cálculo do produto escalar entre dois vetores
 template DotProduct(n) {
-    signal input a[n];
-    signal input b[n];
+    signal input vec1[n];
+    signal input vec2[n];
     signal output out;
     
     signal products[n];
@@ -11,7 +13,7 @@ template DotProduct(n) {
     
     // Calcula produtos elemento por elemento
     for (var i = 0; i < n; i++) {
-        products[i] <== a[i] * b[i];
+        products[i] <== vec1[i] * vec2[i];
     }
     
     // Soma acumulativa dos produtos
@@ -26,7 +28,7 @@ template DotProduct(n) {
 // Template para calcular a norma de um vetor
 template VectorNorm(n) {
     signal input vec[n];
-    signal output norm_squared;
+    signal output out;
     
     signal squares[n];
     signal partial_sums[n];
@@ -42,7 +44,7 @@ template VectorNorm(n) {
         partial_sums[i] <== partial_sums[i-1] + squares[i];
     }
     
-    norm_squared <== partial_sums[n-1];
+    out <== partial_sums[n-1];
 }
 
 // Template principal para verificar similaridade de cossenos
@@ -62,16 +64,16 @@ template CosineSimilarity(n) {
     
     // Conecta as embeddings aos componentes
     for (var i = 0; i < n; i++) {
-        dot_product.a[i] <== embedding1[i];
-        dot_product.b[i] <== embedding2[i];
+        dot_product.vec1[i] <== embedding1[i];
+        dot_product.vec2[i] <== embedding2[i];
         norm1.vec[i] <== embedding1[i];
         norm2.vec[i] <== embedding2[i];
     }
     
     // Calcula produto escalar e normas
     signal dot_prod <== dot_product.out * 10; // Ajuste necessário, ver model/code/enums.py
-    signal norm1_sq <== norm1.norm_squared;
-    signal norm2_sq <== norm2.norm_squared;
+    signal norm1_sq <== norm1.out;
+    signal norm2_sq <== norm2.out;
     
     // Calcula o produto das normas
     signal norms_product <== norm1_sq * norm2_sq;
@@ -91,46 +93,6 @@ template CosineSimilarity(n) {
     ge_check.in[1] <== right_side;
     
     result <== ge_check.out;
-}
-
-// Templates auxiliares retirados do circomlib (não sei importar kkkk)
-template Num2Bits(n) {
-    signal input in;
-    signal output out[n];
-    var lc1=0;
-
-    var e2=1;
-    for (var i = 0; i<n; i++) {
-        out[i] <-- (in >> i) & 1;
-        out[i] * (out[i] -1 ) === 0;
-        lc1 += out[i] * e2;
-        e2 = e2+e2;
-    }
-
-    lc1 === in;
-}
-
-template LessThan(n) {
-    assert(n <= 252);
-    signal input in[2];
-    signal output out;
-
-    component n2b = Num2Bits(n+1);
-
-    n2b.in <== in[0]+ (1<<n) - in[1];
-
-    out <== 1-n2b.out[n];
-}
-
-template GreaterEqThan(n) {
-    signal input in[2];
-    signal output out;
-
-    component lt = LessThan(n);
-
-    lt.in[0] <== in[1];
-    lt.in[1] <== in[0]+1;
-    lt.out ==> out;
 }
 
 // Instância do circuito principal
