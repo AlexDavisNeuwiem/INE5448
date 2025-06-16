@@ -9,6 +9,7 @@ venv/
 *.png
 *.jpg
 *.jpeg
+*.tif
 
 # JSON
 *proof.json
