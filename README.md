@@ -1,56 +1,25 @@
-# Protocolo de Autenticação Multimodal com Zero-Knowledge Proofs
+# Protocolo de Autenticação Biométrica com Provas de Conhecimento Zero
 
 Este projeto implementa um protocolo de autenticação biométrica segura com três componentes isolados: Usuário, Servidor e Modelo de IA.
 
-## Arquitetura
+## Componentes do Sistema
 
-### Principais Componentes:
-
-<span style="color:white;background-color:red">
-- Modelo de IA -
-</span>
+### Modelo de IA
 
 - Gera embeddings biométricas de 512 dimensões por meio de reconhecimento facial
 - Gera as provas zk-SNARKs com base na similaridade das embeddings biométricas
 
-<span style="color:white;background-color:green">
-- Usuário -
-</span>
+### Usuário
 
 - Gera chaves simétricas AES-256
 - Criptografa/descriptografa as embeddings biométricas
 - Solicita registro e autenticação
 
-<span style="color:white;background-color:blue">
-- Servidor -
-</span>
+### Servidor
 
 - Armazena as embeddings criptografadas no banco de dados
-- Retorna IDs únicos de registro
+- Gera IDs únicos de registro
 - Valida a autenticação por meio da verificação das provas zk-SNARKs
-
-### Fluxo do Protocolo
-
-TODO
-
-### Estrutura de Arquivos
-
-```
-.
-├── docker-compose.yml
-├── postgres/
-│   ├── data/
-│   └── .env
-├── server/
-│   ├── code/
-│   └── Dockerfile
-├── model/
-│   ├── code/
-│   └── Dockerfile
-└── user/
-    ├── code/
-    └── Dockerfile
-```
 
 ## Comandos Docker
 
