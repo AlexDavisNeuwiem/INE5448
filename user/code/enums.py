@@ -18,5 +18,3 @@ class Addresses(Enum):
 class ImagePath(Enum):
     FACE_IMAGE_REG = '/home/user/faces/1.jpeg'
     FACE_IMAGE_AUT = '/home/user/faces/2.jpeg'
-    FINGERPRINT_REG = '/home/user/fingerprints/1.jpg'
-    FINGERPRINT_AUT = '/home/user/fingerprints/2.jpg'

@@ -12,7 +12,7 @@ class Adjustments(Enum):
 
     THRESHOLD = int(0.7 * 10) # Ajuste necessário, ver server/code/snarkjs/trusted_setup/input/cosine_similarity.circom
 
-    SCALE = 100_000_000_000_000_000_000_000_000
+    SCALE = 50_000_000_000_000_000_000_000_000_000
 
 class SnarkPath(Enum):
     # === DIRETÓRIOS === #
