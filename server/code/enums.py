@@ -32,3 +32,7 @@ class SnarkPath(Enum):
     VERIFICATION_KEY_INPUT = PROOF_VERIFICATION_INPUTS + 'verification_key.json'
 
     VERIFY_PROOF_SCRIPT = '/bin/bash ' + SNARKJS_DIR + 'proof_verification/verify_proof.sh'
+
+class Benchmark:
+    CRS_GENERATION = 0
+    VERIFICATION_TIME = 0

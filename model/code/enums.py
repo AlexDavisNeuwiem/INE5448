@@ -31,3 +31,8 @@ class SnarkPath(Enum):
     # === SAIDAS === #
     PROOF = PROOF_GENERATION_OUTPUTS + 'proof.json'
     PUBLIC_PARAMETERS= PROOF_GENERATION_OUTPUTS + 'public_parameters.json'
+
+class Benchmark:
+    EMBEDDING_GENERATION = 0
+    PROOF_GENERATION = 0
+

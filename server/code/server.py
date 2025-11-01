@@ -7,7 +7,7 @@ import base64
 
 import psycopg2
 
-from enums import Address, Color, PostgesData, SnarkPath
+from enums import Address, Benchmark, Color, PostgesData, SnarkPath
 
 
 class Server:
@@ -35,8 +35,14 @@ class Server:
         # Inicializa banco de dados
         self.inicializar_banco_dados()
 
+        # Inicia cronômetro para o cálculo do trusted setup
+        Benchmark.CRS_GENERATION = time.time()
+
         # Compila o circuito e gera as chaves de prova e de verificação
         self.executar_trusted_setup()
+
+        # Calcula tempo de geração da CRS
+        Benchmark.CRS_GENERATION = time.time() - Benchmark.CRS_GENERATION
         
         # Inicia servidor para receber mensagens
         self.iniciar_servidor()
@@ -372,23 +378,31 @@ class Server:
         print(Color.BLUE.value + " PROCESSANDO FASE DE AUTENTICAÇÃO - VERIFICAÇÃO")
         print("=" * 60)
         print(Color.BLUE.value + f" Verificando prova zk-SNARK para usuário: {dados_prova.get('user_id')}")
-        
+
+        # Inicia cronômetro para a verificação
+        Benchmark.VERIFICATION_TIME = time.time()
+
         # Verifica prova zk-SNARK
         resultado = self.verificar_prova_snark(
             dados_prova['prova'], 
             dados_prova['params']
         )
         
+        # Calcula tempo de verificação
+        Benchmark.VERIFICATION_TIME = time.time() - Benchmark.VERIFICATION_TIME
+
         if resultado.get('authenticated', False):
             print("=" * 60)
             print(Color.BLUE.value + " FASE DE AUTENTICAÇÃO CONCLUÍDA COM SUCESSO")
-            print("=" * 60)
+            print("=" * 60 + "\n")
+            print(Color.BLUE.value + f" TEMPO DE GERAÇÃO DA FRC: {Benchmark.CRS_GENERATION:.2f} SEGUNDOS")
+            print(Color.BLUE.value + f" TEMPO DE VERIFICAÇÃO: {Benchmark.VERIFICATION_TIME:.2f} SEGUNDOS" + "\n")
         else:
             print(Color.BLUE.value + f" Motivo: {resultado.get('reason', 'Não especificado')}")
             print("=" * 60)
             print(Color.BLUE.value + " AUTENTICAÇÃO FALHOU")
             print("=" * 60 + "\n")
-        
+
         # Envia resultado de volta para o usuário
         self.enviar_resposta(endereco_retorno, {
             'type': 'authentication_result',
@@ -495,7 +509,6 @@ class Server:
                 print(Color.BLUE.value + " ✅ Prova zk-SNARK válida - Autenticação aprovada")
                 return {
                     'authenticated': True,
-                    'timestamp': time.time(),
                     'verification_method': 'zk-SNARK'
                 }
             else:

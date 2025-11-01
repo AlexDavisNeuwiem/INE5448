@@ -10,7 +10,7 @@ from Crypto.Random import get_random_bytes
 from Crypto.Util.Padding import pad, unpad
 
 from PIL import Image
-from enums import Addresses, Color, ImagePath
+from enums import Addresses, Benchmark, Color, ImagePath
 
 
 class User:
@@ -233,6 +233,9 @@ class User:
         print(Color.GREEN.value + " INICIANDO FASE DE REGISTRO")
         print("=" * 60)
         
+        # Inicia cronômetro da fase de registro
+        Benchmark.REGISTRATION_TIME = time.time()
+
         # Etapa 1: Gerar chave simétrica
         print(Color.GREEN.value + " Etapa 1/4: Gerando chave de criptografia")
         self.gerar_chave_simetrica()
@@ -300,6 +303,9 @@ class User:
         # Armazena ID para futuras autenticações
         self.user_id = registration_id
         
+        # Calcula tempo de registro
+        Benchmark.REGISTRATION_TIME = time.time() - Benchmark.REGISTRATION_TIME
+
         # Agenda processo de autenticação
         print("\n" + Color.GREEN.value + " Autenticação será iniciada em 3 segundos...")
         threading.Timer(3.0, self.processo_autenticacao).start()
@@ -312,6 +318,9 @@ class User:
         print(Color.GREEN.value + " INICIANDO FASE DE AUTENTICAÇÃO")
         print("=" * 60)
         
+        # Inicia cronômetro da fase de autenticação
+        Benchmark.AUTHENTICATION_TIME = time.time()
+
         if not self.user_id:
             print(Color.GREEN.value + "❌ Falha na autenticação: ID do usuário não encontrado")
             print(Color.GREEN.value + " É necessário fazer o registro primeiro")
@@ -396,21 +405,25 @@ class User:
     
     def processar_resultado_autenticacao(self, resultado):
         """Processa resultado final da autenticação"""
-        print(f"\n" + Color.GREEN.value + " RESULTADO DA AUTENTICAÇÃO:")
+        print("\n" + Color.GREEN.value + " RESULTADO DA AUTENTICAÇÃO:")
         
         if resultado.get('authenticated', False):
             print(Color.GREEN.value + " ✅ AUTENTICAÇÃO BEM-SUCEDIDA!")
-            print(Color.GREEN.value + f" Usuário autenticado com sucesso")
-            if 'timestamp' in resultado:
-                print(Color.GREEN.value + f" Timestamp: {resultado['timestamp']}")
+            print(Color.GREEN.value + " Usuário autenticado com sucesso")
         else:
             print(Color.GREEN.value + "❌ AUTENTICAÇÃO FALHOU!")
             motivo = resultado.get('reason', 'Motivo não especificado')
             print(Color.GREEN.value + f" Motivo da falha: {motivo}")
         
+        # Calcula tempo de autenticação
+        Benchmark.AUTHENTICATION_TIME = time.time() - Benchmark.AUTHENTICATION_TIME
+
         print("=" * 60)
         print(Color.GREEN.value + " FASE DE AUTENTICAÇÃO FINALIZADA")
         print("=" * 60 + "\n")
+
+        print(Color.GREEN.value + f" TEMPO DE REGISTRO: {Benchmark.REGISTRATION_TIME:.2f} SEGUNDOS")
+        print(Color.GREEN.value + f" TEMPO DE AUTENTICAÇÃO: {Benchmark.AUTHENTICATION_TIME:.2f} SEGUNDOS")
 
     def processar_erro(self, mensagem):
         print(Color.GREEN.value + f"❌ Erro: {mensagem['error']}")

@@ -18,3 +18,7 @@ class Addresses(Enum):
 class ImagePath(Enum):
     FACE_IMAGE_REG = '/home/user/faces/1.jpeg'
     FACE_IMAGE_AUT = '/home/user/faces/2.jpeg'
+
+class Benchmark:
+    REGISTRATION_TIME = 0
+    AUTHENTICATION_TIME = 0

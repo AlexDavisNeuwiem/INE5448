@@ -1,3 +1,4 @@
+import time
 import json
 import socket
 import threading
@@ -8,7 +9,7 @@ from PIL import Image
 from io import BytesIO
 
 import torch
-from enums import Address, Adjustments, Color, SnarkPath
+from enums import Address, Adjustments, Benchmark, Color, SnarkPath
 from facenet_pytorch import MTCNN, InceptionResnetV1
 
 
@@ -126,8 +127,14 @@ class Model:
         print("=" * 60)
         print(Color.RED.value + " Gerando embedding facial...")
         
+        # Inicia cronômetro para calcular tempo de geração de embedding
+        Benchmark.EMBEDDING_GENERATION = time.time()
+
         # Gera embedding da foto
         embedding = self.gerar_embedding(foto_base64)
+
+        # Calcula tempo de geração de embedding
+        Benchmark.EMBEDDING_GENERATION = time.time() - Benchmark.EMBEDDING_GENERATION
         
         if embedding is not None:
             print("=" * 60)
@@ -160,14 +167,23 @@ class Model:
         print("=" * 60)
         print(Color.RED.value + " Gerando prova zk-SNARK...")
         
+        # Inicia cronômetro para calcular tempo de geração de prova
+        Benchmark.PROOF_GENERATION = time.time()
+
         # Gera prova zk-SNARK
         dados_prova = self.gerar_prova_snark(dados)
         
+        # Calcula tempo de geração de prova
+        Benchmark.PROOF_GENERATION = time.time() - Benchmark.PROOF_GENERATION
+
         if dados_prova is not None:
             print("=" * 60)
             print(Color.RED.value + " FASE DE AUTENTICAÇÃO CONCLUÍDA")
             print("=" * 60 + "\n")
             
+            print(Color.RED.value + f" TEMPO DE GERAÇÂO DE EMBEDDINGS: {Benchmark.EMBEDDING_GENERATION:.2f} SEGUNDOS")
+            print(Color.RED.value + f" TEMPO DE GERAÇÂO DE PROVA: {Benchmark.PROOF_GENERATION:.2f} SEGUNDOS" + "\n")
+
             # Envia prova de volta para o usuário
             self.enviar_resposta(endereco_retorno, {
                 'type': 'snark_proof',
